@@ -561,8 +561,7 @@ void LSbox::convolutionGenerator(fftwp_complex *fftTemp, fftwp_plan fftplan1,
 			for (int j = 0; j < n; j++) {
 				j2 = mymin(j,n-j);
 				G = exp(
-						-(static_cast<double> (i2 * i2 + j2 * j2)) * 4.0 * dt
-								* PI * PI) / nsq;
+						-((i2 * i2 + j2 * j2)) * 4.0 * dt* nsq / n_nsq * PI * PI) / nsq;
 				fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
 				fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
 			}

@@ -66,7 +66,7 @@ void grainhdl::setSimulationParameter() {
 		break;
 	}
 	case E_GAUSSIAN: {
-		dt = 0.4 / double(realDomainSize * realDomainSize / 2);
+		dt = 0.75 / double(realDomainSize * realDomainSize);
 		break;
 	}
 	default:
