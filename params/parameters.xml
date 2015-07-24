@@ -9,10 +9,10 @@
    <DomainBorderSize> 7 </DomainBorderSize>
    <MicrostructureGenMode> 1 </MicrostructureGenMode>
    <!-- USAGE:
-   		O		E_READ_FROM_FILE,
-			1		E_GENERATE_WITH_VORONOY,
-			2		E_READ_VERTEX, // The edges need to be ordered
-			3		E_GENERATE_TESTCASE,
+ 	O	E_READ_FROM_FILE,
+	1	E_GENERATE_WITH_VORONOY,
+	2	E_READ_VERTEX, // The edges need to be ordered
+	3	E_GENERATE_TESTCASE,
    -->
    <ReadFromFilename>lsInputQuadrat.dat</ReadFromFilename>
    <HAGB> 1.0 </HAGB>
@@ -23,33 +23,49 @@
    -->
    <UseMobilityFactor> 0</UseMobilityFactor>
    <!-- USAGE:
-    Input is 0 or 1 as a boolean. For 1 a mobility model is applied. 
+    Input is 0 or 1 as a boolean. For 1 a mobility model is applied (comming soon). 
    -->
    <IsIsotropicNetwork> 1 </IsIsotropicNetwork>
+    <!-- USAGE:
+   	0	considers anisotropic grain boundary properties
+   	1	ignores Texture, Energies and Mobilitys are all equal to one. Execution is much faster.
+   -->
    <UseTexture> 1 </UseTexture>
+   <!-- USAGE:
+   	0	generates a random texture
+   	1	generates a fibre texture with maximum misorientation 15° (hardcoded)
+   -->
    <ExecuteInParallel> 1 </ExecuteInParallel>
    <MaximumNumberOfThreads> 8 </MaximumNumberOfThreads>
+   <!-- USAGE:
+	currently ignored. if ExecuteInParallel == 1, you will take omp_get_max_threads()
+	see grainhdl::initEnvironment() 
+   -->
    <GridCoarsement> 1 </GridCoarsement>
+    <!-- USAGE:
+    	0	off 
+   	1 	the grid is coarse proportional to the network. thus, average discretization of a grain is kept constant. 
+   -->
    <GridCoarsementGradient> 0.98 </GridCoarsementGradient> 
    <ConvolutionMode> 0 </ConvolutionMode>   
    <!-- USAGE:
-   	O		E_LAPLACE,
-		1		E_LAPLACE_RITCHARDSON,
-		2		E_GAUSSIAN,
+   	O	E_LAPLACE,
+	1	E_LAPLACE_RITCHARDSON,
+	2	E_GAUSSIAN,
    -->
    <ResearchMode> 0 </ResearchMode>
-		<!-- USAGE:
+   <!-- USAGE:
    	0 	Energies defined by misorientation
-		1	  Energies clambed to 0.3 or 0.6  - use Texture == false			
+	1	Energies set to 1 - use Texture == false (nessecary for Triple Junction experiments)			
    -->
    <ResearchProject> 0 </ResearchProject>
-		<!-- USAGE:
-		0	E_NO_PROJECT
-   	1 E_TRIPLE_JUNCTION_DRAG_SINGLE
-		2	E_TRIPLE_JUNCTION_DRAG_NETWORK	
+   <!-- USAGE:
+	0	E_NO_PROJECT
+   	1 	E_TRIPLE_JUNCTION_DRAG_SINGLE (four sided grain - see paper, outermost triple jucntion are fixed in the corners)
+	2	E_TRIPLE_JUNCTION_DRAG_NETWORK	
    -->
    <ConstantSectorRadius> 3 </ConstantSectorRadius>
    <InterpolatingSectorRadius> 2</InterpolatingSectorRadius>
-   <NeighbourTracking> 1</NeighbourTracking>
+   <NeighbourTracking> 0</NeighbourTracking>
    <DislocationEnergy> 0</DislocationEnergy>
 </Parameters>
