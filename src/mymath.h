@@ -21,7 +21,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include "random.h"
+#include "SCORE_Random.h"
 #include <stdint.h>
 //#include <vector>
 

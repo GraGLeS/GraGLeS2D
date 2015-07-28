@@ -54,7 +54,7 @@
 #include "box.h"
 #include "grainhdl.h"
 #include "mymath.h"
-#include "random.h"
+#include "SCORE_Random.h"
 #include "dimensionalBuffer.h"
 #include "marchingSquares.h"
 

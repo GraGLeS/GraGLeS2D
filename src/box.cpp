@@ -552,9 +552,7 @@ void LSbox::convolutionGenerator(fftwp_complex *fftTemp, fftwp_plan fftplan1,
 		break;
 	}
 	case E_GAUSSIAN: {
-		double nsq = m_grainHandler->KernelNormalizationFactor;
-		cout << n * n << "   " << nsq << endl;
-		nsq = n * n;
+		double n_nsq = n * n;
 		//			Convolution with Normaldistribution
 		for (int i = 0; i < n2; i++) {
 			i2 = mymin(i,n-i);

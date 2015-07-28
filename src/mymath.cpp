@@ -17,7 +17,7 @@
 */
 #include "mymath.h"
 #include "applic.h"
-#include "random.h"
+
 
 
 //###LB: Unless indicated, all functions in radians.
