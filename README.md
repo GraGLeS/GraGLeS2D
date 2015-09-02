@@ -6,9 +6,7 @@ For detailed information, please read my Acta Materialia paper (private version 
 
 Article title:	
 
-An Advanced Level Set Approach to Grain Growth - Accounting for Grain Boundary Anisotropy and Finite Triple Junction Mobility 
-
-publication date: autumm 2015
+An Advanced Level Set Approach to Grain Growth - Accounting for Grain Boundary Anisotropy and Finite Triple Junction Mobility, Acta Materialia, Volume 99, 15 October 2015, Pages 39–48
 
 DOI information:	10.1016/j.actamat.2015.07.040.
 
