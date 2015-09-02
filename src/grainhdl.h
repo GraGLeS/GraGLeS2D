@@ -24,6 +24,8 @@
 #include "spoint.h"
 #include "Settings.h"
 #include <omp.h>
+#include "misorientation.h"
+
 
 #define xsect(p1,p2) (h[p2]*xh[p1]-h[p1]*xh[p2])/(h[p2]-h[p1])
 #define ysect(p1,p2) (h[p2]*yh[p1]-h[p1]*yh[p2])/(h[p2]-h[p1])
@@ -35,6 +37,7 @@ using namespace std;
 
 class LSbox;
 class mathMethods;
+
 /*!
  * \class grainhdl
  * \brief Class that manages the grain growth simulation.
@@ -52,7 +55,6 @@ protected:
 	int Mode;
 
 public:
-	double KernelNormalizationFactor;
 	int currentNrGrains;
 	mathMethods* mymath;
 	unsigned int loop;
@@ -67,11 +69,12 @@ public:
 	vector<double> time;
 	vector<double> totalenergy;
 	vector<int> nr_grains;
-	vector<double> discreteEnergyDistribution;
+	vector<double> MODF;
 
 	//! A 2D vector which stores weights.
 	vector<vector<double> > weightsMatrix;
 
+	double ds;
 	double tubeRadius;
 	double *ST;
 	double *part_pos;
@@ -80,6 +83,8 @@ public:
 	double deviation;
 	double BoundaryGrainTube;
 	double simulationTime;
+	double maxVol;
+	MisorientationHdl* m_misOriHdl;
 
 	vector<LSbox*> grains;
 	LSbox* boundary;
@@ -133,6 +138,7 @@ public:
 	void set_realDomainSize(int realDomainSizen);
 	//! Used if points are set manually
 	int read_ScenarioPoints();
+	void get_biggestGrainVol();
 
 	inline LSbox* getGrainByID(unsigned int ID)
 	{
@@ -165,6 +171,12 @@ public:
 	}
 	inline double getBoundaryGrainTube() {
 		return BoundaryGrainTube;
+	}
+	inline double get_ds() {
+			return ds;
+		}
+	inline double get_maxVol(){
+		return maxVol;
 	}
 
 protected:

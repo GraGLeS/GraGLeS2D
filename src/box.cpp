@@ -1,20 +1,20 @@
 /*
-	GraGLeS 2D A grain growth simulation utilizing level set approaches
-    Copyright (C) 2015  Christian Miessen, Nikola Velinov
+ GraGLeS 2D A grain growth simulation utilizing level set approaches
+ Copyright (C) 2015  Christian Miessen, Nikola Velinov
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "box.h"
 #include "Settings.h"
 #include "dimensionalBufferReal.h"
@@ -23,15 +23,15 @@
 #include "grahamScan.h"
 #include "minimalisticBoundary.h"
 #include "utilities.h"
+#include <cstdlib>
 #include <algorithm>
 
 #define PERIODIC(x, f) (((x)+f)%f)
 
 LSbox::LSbox(int id, double phi1, double PHI, double phi2, grainhdl* owner) :
-	m_ID(id), m_exists(true),m_grainHandler(owner), m_grainBoundary(this),
-	m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
-	m_volume(0), m_energy(0), m_perimeter(0)
-{
+	m_ID(id), m_exists(true), m_grainHandler(owner), m_grainBoundary(this),
+			m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
+			m_volume(0), m_energy(0), m_perimeter(0) {
 	m_orientationQuat = new double[4];
 	double euler[3] = { phi1, PHI, phi2 };
 	(*(m_grainHandler->mymath)).euler2quaternion(euler, m_orientationQuat);
@@ -39,17 +39,14 @@ LSbox::LSbox(int id, double phi1, double PHI, double phi2, grainhdl* owner) :
 	m_inputDistance = new DimensionalBufferReal(0, 0, 0, 0);
 	m_outputDistance = new DimensionalBufferReal(0, 0, 0, 0);
 
-	m_volumeEvolution = rnd() * 100; //Zufallszahl zwischen 0 und 100
 }
 
 LSbox::LSbox(int aID, vector<SPoint>& contour, grainhdl* owner) :
 	m_ID(aID), m_exists(true), m_grainHandler(owner), m_grainBoundary(this),
-	m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
-	m_volume(0), m_energy(0), m_perimeter(0)
-{
+			m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
+			m_volume(0), m_energy(0), m_perimeter(0) {
 
 	int grid_blowup = owner->get_grid_blowup();
-	m_volumeEvolution = rnd() * 100; //Zufallszahl zwischen 0 und 100
 	double h = owner->get_h();
 	// determine size of grain
 	m_orientationQuat = new double[4];
@@ -57,9 +54,10 @@ LSbox::LSbox(int aID, vector<SPoint>& contour, grainhdl* owner) :
 	{
 		if (Settings::UseTexture) {
 			double newOri[3];
-			(*(m_grainHandler->mymath)).newOrientationFromReference(m_grainHandler->bunge,
-					m_grainHandler->deviation, newOri);
-			(*(m_grainHandler->mymath)).euler2quaternion(newOri, m_orientationQuat);
+			(*(m_grainHandler->mymath)).newOrientationFromReference(
+					m_grainHandler->bunge, m_grainHandler->deviation, newOri);
+			(*(m_grainHandler->mymath)).euler2quaternion(newOri,
+					m_orientationQuat);
 		} else
 			(*(m_grainHandler->mymath)).randomOriShoemakeQuat(m_orientationQuat);
 	}
@@ -102,16 +100,14 @@ LSbox::LSbox(int aID, vector<SPoint>& contour, grainhdl* owner) :
 LSbox::LSbox(int id, int nvertices, double* vertices, double q1, double q2,
 		double q3, double q4, grainhdl* owner) :
 	m_ID(id), m_exists(true), m_grainHandler(owner), m_grainBoundary(this),
-	m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
-	m_volume(0), m_energy(0), m_perimeter(0)
-{
+			m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
+			m_volume(0), m_energy(0), m_perimeter(0) {
 	m_orientationQuat = new double[4];
 	m_orientationQuat[0] = q1;
 	m_orientationQuat[1] = q2;
 	m_orientationQuat[2] = q3;
 	m_orientationQuat[3] = q4;
 	m_grainBoundary.getRawBoundary().resize(nvertices);
-	m_volumeEvolution = rnd() * 100; //Zufallszahl zwischen 0 und 100
 
 	int grid_blowup = m_grainHandler->get_grid_blowup();
 	double h = m_grainHandler->get_h();
@@ -159,14 +155,8 @@ LSbox::LSbox(int id, int nvertices, double* vertices, double q1, double q2,
 LSbox::LSbox(int id, int nedges, double* edges, double phi1, double PHI,
 		double phi2, grainhdl* owner) :
 	m_ID(id), m_exists(true), m_grainHandler(owner), m_grainBoundary(this),
-	m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
-	m_volume(0), m_energy(0), m_perimeter(0)
-{
-	if (id == 1) {
-		m_volumeEvolution = 2;//rnd() *10; //Zufallszahl zwischen 0 und 100
-		cout << "Volumenenergy Korn 1: " << m_volumeEvolution << endl;
-	} else
-		m_volumeEvolution = 0;
+			m_isMotionRegular(true), m_intersectsBoundaryGrain(false),
+			m_volume(0), m_energy(0), m_perimeter(0){
 	m_orientationQuat = new double[4];
 	double euler[3] = { phi1, PHI, phi2 };
 	(*(m_grainHandler->mymath)).euler2quaternion(euler, m_orientationQuat);
@@ -311,7 +301,8 @@ void LSbox::calculateDistanceFunction() {
 			m_outputDistance->setValueAt(i, j, isInside ? minDist : -minDist);
 		}
 	}
-	m_volume = computeVolume() / (m_grainHandler->get_h() * m_grainHandler->get_h());
+	m_volume = computeVolume() / (m_grainHandler->get_h()
+			* m_grainHandler->get_h());
 }
 
 // Convolution und Helperfunctions 
@@ -319,23 +310,28 @@ void LSbox::calculateDistanceFunction() {
 /**************************************/
 
 void LSbox::executeConvolution(ExpandingVector<char>& mem_pool) {
+
+	//	plot_box(true, 1, "BeforeConvo", true);
 	double h = m_grainHandler->get_h();
 	if (grainExists() != true)
 		return;
 	//  set references for the convolution step
-
+#ifdef USE_FFTW
 	fftwp_complex *fftTemp = (fftwp_complex*) &mem_pool[0];
-
-	convolutionGenerator(fftTemp, m_forwardPlan, m_backwardsPlan);
+	convolutionGeneratorFFTW(fftTemp, m_forwardPlan, m_backwardsPlan);
+#elif defined USE_MKL
+	MKL_Complex16* fftTemp = (MKL_Complex16*) &mem_pool[0];
+	convolutionGeneratorMKL(fftTemp);
+#endif
 	/*********************************************************************************/
 	// Velocity Corrector Step: 
 	/*********************************************************************************/
 	// hier soll energycorrection gerechnet werden.
-	// in der domainCl steht die urspr�nglich distanzfunktion, in dem arry die gefaltete
+	// in der domainCl steht die urspruenglich distanzfunktion, in dem arry die gefaltete
 
 	//TEST CODE
-	if (!Settings::IsIsotropicNetwork && m_grainHandler->loop !=0 && m_isMotionRegular
-			== true) {
+	if (!Settings::IsIsotropicNetwork && m_grainHandler->loop != 0
+			&& m_isMotionRegular == true) {
 		constructBoundarySectors();
 		vector<LSbox*>::iterator it;
 		int intersec_xmin, intersec_xmax, intersec_ymin, intersec_ymax;
@@ -344,14 +340,12 @@ void LSbox::executeConvolution(ExpandingVector<char>& mem_pool) {
 		vector<LSbox*> IDs;
 		vector<LSbox*> IDsActive;
 
+		//correction of the shrinkage of small grains with radius rCrit < rLimit
 		double rCrit = sqrt(getVolume() / PI) / h;
 		double rLimit = 15.0;
-
 		//! Linear fitting
 		double yInterceptBottom = 0.83;
-
 		//! Quadratic fitting
-
 		//! Square root fitting
 		double cSlope = (1 - yInterceptBottom) / cbrt(rLimit);
 
@@ -385,11 +379,14 @@ void LSbox::executeConvolution(ExpandingVector<char>& mem_pool) {
 						m_outputDistance->setValueAt(
 								i,
 								j,
-								val + (m_outputDistance->getValueAt(i, j) - val)
-										* weight * (cSlope * cbrt(rCrit)
-										+ yInterceptBottom));
+								val
+										+ (m_outputDistance->getValueAt(i, j)
+												- val) * weight * (cSlope
+												* cbrt(rCrit)
+												+ yInterceptBottom));
 					} else {
-						m_outputDistance->setValueAt(i, j, -m_grainHandler->delta);
+						m_outputDistance->setValueAt(i, j,
+								-m_grainHandler->delta);
 					}
 				} else {
 
@@ -398,54 +395,48 @@ void LSbox::executeConvolution(ExpandingVector<char>& mem_pool) {
 						m_outputDistance->setValueAt(
 								i,
 								j,
-								val + (m_outputDistance->getValueAt(i, j) - val)
-										* weight);
+								val
+										+ (m_outputDistance->getValueAt(i, j)
+												- val) * weight);
 					} else {
-						m_outputDistance->setValueAt(i, j, -m_grainHandler->delta);
+						m_outputDistance->setValueAt(i, j,
+								-m_grainHandler->delta);
 					}
 				}
-				if (Settings::DislocationEnergy)
-					m_outputDistance->setValueAt(
-							i,
-							j,
-							(m_outputDistance->getValueAt(i, j) - (2 * m_volumeEvolution
-									* m_grainHandler->get_dt())));
 			}
 		}
 	}
-	if (Settings::DislocationEnergy) {
-		for (int i = m_outputDistance->getMinY(); i < m_outputDistance->getMaxY(); i++) {
-			for (int j = m_outputDistance->getMinX(); j
-					< m_outputDistance->getMaxX(); j++) {
-				m_outputDistance->setValueAt(
-						i,
-						j,
-						(m_outputDistance->getValueAt(i, j) + (2 * m_volumeEvolution
-								* m_grainHandler->get_dt())));
-			}
-		}
-	}
+	//plot_box(true, 1, "BeforeConvoGaussian", true);
+	//plot_box(true, 2, "AfterConvoGaussian", true);
 	reizeIDLocalToDistanceBuffer();
 	m_IDLocal.clear();
 }
+#ifdef USE_FFTW
 void LSbox::destroyFFTWs() {
 	fftw_destroy_planp(m_forwardPlan);
 	fftw_destroy_planp(m_backwardsPlan);
 }
+#endif
 
 double LSbox::getGBEnergyTimesGBMobility(int i, int j) {
 	//LSbox* neighbour = IDLocal.getValueAt(i, j).getElementAt(0);
-	LSbox* neighbour = m_grainHandler->getGrainByID(m_IDLocal.getValueAt(i, j).grainID);
+	LSbox* neighbour = m_grainHandler->getGrainByID(
+			m_IDLocal.getValueAt(i, j).grainID);
 	characteristics& found = m_grainBoundary.getDirectNeighbourCaracteristic(
 			neighbour);
-	return found.energyDensity * found.mobility;
-
+	if (found.energyDensity * found.mobility > 0.01)
+		return found.energyDensity * found.mobility;
+	else
+		return 0.01;
 }
 
 double LSbox::getGBEnergyTimesGBMobility(LSbox* neighbour) {
 	characteristics& found = m_grainBoundary.getDirectNeighbourCaracteristic(
 			neighbour);
-	return found.energyDensity * found.mobility;
+	if (found.energyDensity * found.mobility > 0.01)
+		return found.energyDensity * found.mobility;
+	else
+		return 0.01;
 }
 
 double LSbox::getGBEnergy(LSbox* neighbour) {
@@ -462,7 +453,7 @@ void LSbox::reizeIDLocalToDistanceBuffer() {
 
 	m_IDLocal.resize(xminId, yminId, xmaxId, ymaxId);
 }
-
+#ifdef USE_FFTW
 void LSbox::makeFFTPlans(double *in, double* out, fftw_complex *fftTemp,
 		fftw_plan *fftplan1, fftw_plan *fftplan2) { /* creates plans for FFT and IFFT */
 	int n = m_outputDistance->getMaxX() - m_outputDistance->getMinX();
@@ -492,14 +483,20 @@ void LSbox::makeFFTPlans(ExpandingVector<char>& memory_dump) {
 	makeFFTPlans(m_inputDistance->getRawData(), m_outputDistance->getRawData(),
 			fftTemp, &m_forwardPlan, &m_backwardsPlan);
 }
+#endif
 
 void LSbox::preallocateMemory(ExpandingVector<char>& memory_dump) {
 	int n = m_outputDistance->getMaxX() - m_outputDistance->getMinX();
-	int desired_size = n * (floor(n / 2) + 1) * sizeof(fftwp_complex);
+	int desired_size = 0;
+#ifdef USE_FFTW
+	desired_size = n * (floor(n / 2) + 1) * sizeof(fftwp_complex);
+#elif defined USE_MKL
+	desired_size = n * (floor(n / 2) + 1) * sizeof(MKL_Complex16);
+#endif
 	memory_dump.expand(desired_size);
 }
-
-void LSbox::convolutionGenerator(fftwp_complex *fftTemp, fftwp_plan fftplan1,
+#ifdef USE_FFTW
+void LSbox::convolutionGeneratorFFTW(fftwp_complex *fftTemp, fftwp_plan fftplan1,
 		fftwp_plan fftplan2) {
 	/* Function returns in u the updated value of u as described below..
 	 u -> (G_{dt})*u
@@ -525,55 +522,169 @@ void LSbox::convolutionGenerator(fftwp_complex *fftTemp, fftwp_plan fftplan1,
 	//	Forward DFT
 
 	switch (Settings::ConvolutionMode) {
-	case E_LAPLACE: {
-		for (int i = 0; i < n2; i++) {
-			coski = cos(k * i);
-			for (int j = 0; j < n; j++) {
-				G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
-				G = 1.0 / (1.0 + (dt * G)) / (n * n);
-				fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
-				fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+		case E_LAPLACE: {
+			for (int i = 0; i < n2; i++) {
+				coski = cos(k * i);
+				for (int j = 0; j < n; j++) {
+					G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
+					G = 1.0 / (1.0 + (dt * G)) / (n * n);
+					fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
+					fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+				}
 			}
+			break;
 		}
-		break;
-	}
-	case E_LAPLACE_RITCHARDSON: {
-		//			Ritchardson Extrapolation
-		for (int i = 0; i < n2; i++) {
-			coski = cos(k * i);
-			for (int j = 0; j < n; j++) {
-				G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
-				G = (4.0 / pow(1 + 1.5 * (dt) / 40 * G, 40) - 1.0 / pow(
-						1 + 3.0 * (dt) / 40 * G, 40)) / 3.0 / (double) (n * n);
-				fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
-				fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+		case E_LAPLACE_RITCHARDSON: {
+			//			Ritchardson Extrapolation
+			for (int i = 0; i < n2; i++) {
+				coski = cos(k * i);
+				for (int j = 0; j < n; j++) {
+					G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
+					G = (4.0 / pow(1 + 1.5 * (dt) / 40 * G, 40) - 1.0 / pow(
+									1 + 3.0 * (dt) / 40 * G, 40)) / 3.0 / (double) (n * n);
+					fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
+					fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+				}
 			}
+			break;
 		}
-		break;
-	}
-	case E_GAUSSIAN: {
-		double n_nsq = n * n;
-		//			Convolution with Normaldistribution
-		for (int i = 0; i < n2; i++) {
-			i2 = mymin(i,n-i);
-			for (int j = 0; j < n; j++) {
-				j2 = mymin(j,n-j);
-				G = exp(
-						-((i2 * i2 + j2 * j2)) * 4.0 * dt* nsq / n_nsq * PI * PI) / nsq;
-				fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
-				fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+		case E_GAUSSIAN: {
+			double n_nsq = n * n;
+
+			//	Convolution with Normaldistribution
+			for (int i = 0; i < n2; i++) {
+				i2 = mymin(i,n-i);
+				for (int j = 0; j < n; j++) {
+					j2 = mymin(j,n-j);
+					G = exp(-(i2 * i2 + j2 * j2) * 4.0 * dt * nsq / n_nsq * PI * PI) / n_nsq;
+					fftTemp[i + n2 * j][0] = fftTemp[i + n2 * j][0] * G;
+					fftTemp[i + n2 * j][1] = fftTemp[i + n2 * j][1] * G;
+				}
 			}
+			break;
 		}
-		break;
-	}
-	default:
+		default:
 		break;
 	}
 
 	executeFFTW(fftplan2);
 	//	Inverse DFT
 }
+#elif defined USE_MKL
 
+void LSbox::convolutionGeneratorMKL(MKL_Complex16* fftTemp)
+{
+	//	MKL_LONG dimensions[2];
+
+	if (m_grainHandler->get_loop()==0) {
+		m_dimensions[0]=0; m_dimensions[1]=0;
+		m_b_input_strides[0] = 0; m_b_input_strides[2] = 1;
+		m_b_output_strides[0] = 0; m_b_output_strides[2] = 1;
+		m_f_input_strides[0] = 0; m_f_input_strides[2] = 1;
+		m_f_output_strides[0] = 0; m_f_output_strides[2] = 1;
+		m_handle =0; m_b_handle = 0;
+	}
+
+	//	m_handle = 0;
+
+	DFTI_CONFIG_VALUE precision;
+
+#if PRECISION > 0
+	precision = DFTI_SINGLE;
+#else
+	precision = DFTI_DOUBLE;
+#endif
+	bool update_backward_plan = false;
+	if (m_dimensions[0] != m_outputDistance->getMaxX() - m_outputDistance->getMinX()) {
+		update_backward_plan = true;
+		m_dimensions[0] = m_outputDistance->getMaxX() - m_outputDistance->getMinX();
+		m_dimensions[1] = m_outputDistance->getMaxY() - m_outputDistance->getMinY();
+		DftiFreeDescriptor(&m_handle);
+		DftiCreateDescriptor(&m_handle, precision, DFTI_REAL, 2, m_dimensions);
+		DftiSetValue(m_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+		DftiSetValue(m_handle, DFTI_CONJUGATE_EVEN_STORAGE,DFTI_COMPLEX_COMPLEX);
+		m_f_input_strides[1] = m_dimensions[0];
+		DftiSetValue(m_handle, DFTI_INPUT_STRIDES, m_f_input_strides);
+		m_f_output_strides[1] = m_dimensions[0]/2 + 1;
+		DftiSetValue(m_handle, DFTI_OUTPUT_STRIDES, m_f_output_strides);
+		DftiCommitDescriptor(m_handle);
+	}
+
+	DftiComputeForward(m_handle, m_inputDistance->getRawData(), fftTemp);
+
+	int n = m_dimensions[0];
+	double dt = m_grainHandler->get_dt();
+	int n2 = floor(n / 2) + 1;
+	int nn = (*m_grainHandler).get_realDomainSize();
+	double nsq = nn * nn;
+	double k = 2.0 * PI / n;
+	double G;
+	double coski;
+	int j2;
+	int i2;
+
+	switch (Settings::ConvolutionMode) {
+		case E_LAPLACE: {
+			for (int i = 0; i < n2; i++) {
+				coski = cos(k * i);
+				for (int j = 0; j < n; j++) {
+					G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
+					G = 1.0 / (1.0 + (dt * G)) / (n * n);
+					fftTemp[i + n2 * j].real = fftTemp[i + n2 * j].real * G;
+					fftTemp[i + n2 * j].imag = fftTemp[i + n2 * j].imag * G;
+				}
+			}
+			break;
+		}
+		case E_LAPLACE_RITCHARDSON: {
+			//			Ritchardson Extrapolation
+			for (int i = 0; i < n2; i++) {
+				coski = cos(k * i);
+				for (int j = 0; j < n; j++) {
+					G = 2.0 * (2.0 - coski - cos(k * j)) * nsq;
+					G = (4.0 / pow(1 + 1.5 * (dt) / 40 * G, 40) - 1.0 / pow(
+									1 + 3.0 * (dt) / 40 * G, 40)) / 3.0 / (double) (n * n);
+					fftTemp[i + n2 * j].real = fftTemp[i + n2 * j].real * G;
+					fftTemp[i + n2 * j].imag = fftTemp[i + n2 * j].imag * G;
+				}
+			}
+			break;
+		}
+		case E_GAUSSIAN: {
+			//cout << n * n << "   " << nsq << endl;
+			double n_nsq = n * n;
+			//			Convolution with Normaldistribution
+			for (int i = 0; i < n2; i++) {
+				i2 = mymin(i,n-i);
+				for (int j = 0; j < n; j++) {
+					j2 = mymin(j,n-j);
+					G = exp(-(i2 * i2 + j2 * j2) * 4.0 * dt * PI * PI) / n_nsq;
+					fftTemp[i + n2 * j].real = fftTemp[i + n2 * j].real * G;
+					fftTemp[i + n2 * j].imag = fftTemp[i + n2 * j].imag * G;
+				}
+			}
+			break;
+		}
+		default:
+		break;
+	}
+	if (update_backward_plan) {
+		DftiFreeDescriptor(&m_b_handle);
+		DftiCreateDescriptor(&m_b_handle, precision, DFTI_REAL, 2, m_dimensions);
+		DftiSetValue(m_b_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+		DftiSetValue(m_b_handle, DFTI_CONJUGATE_EVEN_STORAGE,DFTI_COMPLEX_COMPLEX);
+		m_b_input_strides[1] = m_dimensions[0]/2 + 1;
+		DftiSetValue(m_b_handle, DFTI_INPUT_STRIDES, m_b_input_strides);
+		m_b_output_strides[1] = m_dimensions[0];
+		DftiSetValue(m_b_handle, DFTI_OUTPUT_STRIDES, m_b_output_strides);
+		DftiCommitDescriptor(m_b_handle);
+	}
+	DftiComputeBackward(m_b_handle, fftTemp, m_outputDistance->getRawData());
+
+}
+#endif
+
+#ifdef USE_FFTW
 void LSbox::executeFFTW(fftw_plan fftplan) {
 	fftw_execute(fftplan);
 }
@@ -581,7 +692,7 @@ void LSbox::executeFFTW(fftw_plan fftplan) {
 void LSbox::executeFFTW(fftwf_plan fftplan) {
 	fftwf_execute(fftplan);
 }
-
+#endif
 /**************************************/
 /**************************************/
 
@@ -606,8 +717,10 @@ void LSbox::executeSetComparison() {
 	m_newYMin = m_outputDistance->getMaxY();
 	m_newYMax = m_outputDistance->getMinY();
 	for (int i = m_outputDistance->getMinY(); i < m_outputDistance->getMaxY(); i++) {
-		for (int j = m_outputDistance->getMinX(); j < m_outputDistance->getMaxX(); j++) {
-			if (abs(m_inputDistance->getValueAt(i, j)) < 0.7 * m_grainHandler->delta) {
+		for (int j = m_outputDistance->getMinX(); j
+				< m_outputDistance->getMaxX(); j++) {
+			if (abs(m_inputDistance->getValueAt(i, j)) < 0.7
+					* m_grainHandler->delta) {
 				m_outputDistance->setValueAt(
 						i,
 						j,
@@ -659,7 +772,8 @@ void LSbox::executeComparison() {
 	std::vector<LSbox*>::iterator it_nn;
 
 	m_secondOrderNeighbours = m_comparisonList;
-	for (it_nn = m_secondOrderNeighbours.begin(); it_nn != m_secondOrderNeighbours.end(); it_nn++) {
+	for (it_nn = m_secondOrderNeighbours.begin(); it_nn
+			!= m_secondOrderNeighbours.end(); it_nn++) {
 		int x_min_new, x_max_new, y_min_new, y_max_new;
 
 		if (m_inputDistance->getMinX() < (**it_nn).m_inputDistance->getMinX())
@@ -709,12 +823,14 @@ bool LSbox::BoundaryIntersection() {
 			+ m_grainHandler->getBoundaryGrainTube();
 	int yMinBoundary = xMinBoundary;
 
-	int xMaxBoundary = m_grainHandler->get_ngridpoints() - m_grainHandler->get_grid_blowup()
+	int xMaxBoundary = m_grainHandler->get_ngridpoints()
+			- m_grainHandler->get_grid_blowup()
 			- m_grainHandler->getBoundaryGrainTube();
 	int yMaxBoundary = xMaxBoundary;
 
-	if (m_outputDistance->getMinX() > xMinBoundary && m_outputDistance->getMaxX()
-			< xMaxBoundary && m_outputDistance->getMinY() > yMinBoundary
+	if (m_outputDistance->getMinX() > xMinBoundary
+			&& m_outputDistance->getMaxX() < xMaxBoundary
+			&& m_outputDistance->getMinY() > yMinBoundary
 			&& m_outputDistance->getMaxY() < yMaxBoundary)
 		return false;
 	else
@@ -793,7 +909,8 @@ void LSbox::computeSecondOrderNeighbours() {
 	m_comparisonList.clear();
 	// neighbors_2order gets a copy of ToCompare in comparison_box, so that it can be used here for reference for other objects.
 
-	for (auto it = m_secondOrderNeighbours.begin(); it != m_secondOrderNeighbours.end(); it++) {
+	for (auto it = m_secondOrderNeighbours.begin(); it
+			!= m_secondOrderNeighbours.end(); it++) {
 		if ((*it)->grainExists() == true)
 			m_comparisonList.push_back((*it));
 		for (auto it_ngC = (*it)->m_secondOrderNeighbours.begin(); it_ngC
@@ -811,7 +928,8 @@ void LSbox::computeSecondOrderNeighbours() {
 			continue;
 		if ((*it_nC) == m_grainHandler->boundary)
 			continue;
-		for (auto it_com = m_comparisonList.begin(); it_com != m_comparisonList.end(); it_com++) {
+		for (auto it_com = m_comparisonList.begin(); it_com
+				!= m_comparisonList.end(); it_com++) {
 			if ((*it_com) == (*it_nC)) {
 				just_in = true;
 				break;
@@ -846,16 +964,16 @@ void LSbox::extractContour() {
 			== false) {
 		do {
 			clearContourGrainArea();
-			m_exists = m_grainBoundary.extractBoundaryAndJunctions(*m_inputDistance,
-					m_IDLocal, m_grainHandler->loop);
+			m_exists = m_grainBoundary.extractBoundaryAndJunctions(
+					*m_inputDistance, m_IDLocal, m_grainHandler->loop);
 			if (!grainExists()) {
 				cout << "we cleared a small grain " << m_ID << endl;
 				return;
 			}
 			newVolume = computeVolume();
 		} while (isMotionRegular(old_contour_len,
-				m_grainBoundary.getBoundarySegmentCount(), getVolume(), newVolume)
-				== false);
+				m_grainBoundary.getBoundarySegmentCount(), getVolume(),
+				newVolume) == false);
 	}
 
 	int m = m_grainHandler->get_ngridpoints();
@@ -865,7 +983,7 @@ void LSbox::extractContour() {
 	bool out = false;
 	if (m_newXMin < 0) {
 		out = false;
-		m_newXMin =0;
+		m_newXMin = 0;
 	}
 	if (m_newXMin < 0) {
 		m_newXMin = 0;
@@ -889,8 +1007,8 @@ void LSbox::extractContour() {
 		cout << "WARNING - undefined Boxsize in Box: " << m_ID
 				<< " in Timestep: " << loop << "!!" << endl;
 		cout << "Number of gridpoints: " << m << endl;
-		cout << m_newYMin << " || " << m_newXMin << " || " << m_newYMax << " || "
-				<< m_newXMax << endl;
+		cout << m_newYMin << " || " << m_newXMin << " || " << m_newYMax
+				<< " || " << m_newXMax << endl;
 	}
 	m_outputDistance->resize(m_newXMin, m_newYMin, m_newXMax, m_newYMax);
 	m_outputDistance->resizeToSquare(m_grainHandler->get_ngridpoints());
@@ -900,13 +1018,14 @@ void LSbox::extractContour() {
 	return;
 }
 
-bool LSbox::isMotionRegular(int old_contour, int new_contour, double old_volume, double new_volume){
+bool LSbox::isMotionRegular(int old_contour, int new_contour,
+		double old_volume, double new_volume) {
 	//Formula approximating von Neumann Mulls rule.
 	//return (new_volume - old_volume)/m_grainHandler->get_dt() * (3/PI) >= -20.0;
 	//	Formula approximating von Neumann Mulls rule.
 	//return (new_volume - old_volume)/m_grainHandler->get_dt() * (3/PI) >= -20.0;
-	double mullinsCriterion = (new_volume - old_volume) / m_grainHandler->get_dt()
-			* (3 / PI);
+	double mullinsCriterion = (new_volume - old_volume)
+			/ m_grainHandler->get_dt() * (3 / PI);
 	double contourRatio = ((double) new_contour) / old_contour;
 	double volumeRatio = new_volume / old_volume;
 
@@ -963,8 +1082,9 @@ void LSbox::computeVolumeAndEnergy() {
 
 	double dA = getVolume();
 	m_volume = abs(newVolume);
-	if ((m_grainHandler->loop - 1) % Settings::AnalysisTimestep == 0 || m_grainHandler->loop ==0)
-		m_meanDa =0;
+	if ((m_grainHandler->loop - 1) % Settings::AnalysisTimestep == 0
+			|| m_grainHandler->loop == 0)
+		m_meanDa = 0;
 	dA = m_volume - dA;
 	dA /= m_grainHandler->get_dt();
 	dA *= (3 / PI);
@@ -1016,18 +1136,21 @@ void LSbox::executeRedistancing() {
 					i_slope = (m_inputDistance->getValueAt(i, j + 1)
 							- m_inputDistance->getValueAt(i, j)) / h;
 					distToZero = -m_inputDistance->getValueAt(i, j) / i_slope;
-					if (abs(m_outputDistance->getValueAt(i, j)) > abs(distToZero))
+					if (abs(m_outputDistance->getValueAt(i, j)) > abs(
+							distToZero))
 						m_outputDistance->setValueAt(i, j,
 								-distToZero * sgn(i_slope));
 				}
-				candidate = m_outputDistance->getValueAt(i, j)
-						+ (sgn(m_inputDistance->getValueAt(i, j + 1)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i, j + 1)))
+				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
+						m_inputDistance->getValueAt(i, j + 1)) * h);
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i, j + 1)))
 					m_outputDistance->setValueAt(i, j + 1, candidate);
 			} else {
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_outputDistance->getValueAt(i, j + 1)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i, j + 1)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i, j + 1)))
 					m_outputDistance->setValueAt(i, j + 1, candidate);
 			}
 		}
@@ -1041,12 +1164,14 @@ void LSbox::executeRedistancing() {
 				// calculate new distance candidate and assign if appropriate
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_inputDistance->getValueAt(i, j - 1)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i, j - 1)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i, j - 1)))
 					m_outputDistance->setValueAt(i, j - 1, candidate);
 			} else {
 				candidate = m_outputDistance->getValueAt(i, j) + sgn(
 						m_outputDistance->getValueAt(i, j - 1)) * h;
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i, j - 1)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i, j - 1)))
 					m_outputDistance->setValueAt(i, j - 1, candidate);
 			}
 		}
@@ -1062,19 +1187,22 @@ void LSbox::executeRedistancing() {
 					i_slope = (m_inputDistance->getValueAt(i + 1, j)
 							- m_inputDistance->getValueAt(i, j)) / h;
 					distToZero = -m_inputDistance->getValueAt(i, j) / i_slope;
-					if (abs(m_outputDistance->getValueAt(i, j)) > abs(distToZero))
+					if (abs(m_outputDistance->getValueAt(i, j)) > abs(
+							distToZero))
 						m_outputDistance->setValueAt(i, j,
 								-distToZero * sgn(i_slope));
 				}
 				// calculate new distance candidate and assign if appropriate
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_inputDistance->getValueAt(i + 1, j)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i + 1, j)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i + 1, j)))
 					m_outputDistance->setValueAt(i + 1, j, candidate);
 			} else {
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_outputDistance->getValueAt(i + 1, j)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i + 1, j)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i + 1, j)))
 					m_outputDistance->setValueAt(i + 1, j, candidate);
 			}
 		}
@@ -1086,12 +1214,14 @@ void LSbox::executeRedistancing() {
 				// calculate new distance candidate and assign if appropriate
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_inputDistance->getValueAt(i - 1, j)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i - 1, j)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i - 1, j)))
 					m_outputDistance->setValueAt(i - 1, j, candidate);
 			} else {
 				candidate = m_outputDistance->getValueAt(i, j) + (sgn(
 						m_outputDistance->getValueAt(i - 1, j)) * h);
-				if (abs(candidate) < abs(m_outputDistance->getValueAt(i - 1, j)))
+				if (abs(candidate)
+						< abs(m_outputDistance->getValueAt(i - 1, j)))
 					m_outputDistance->setValueAt(i - 1, j, candidate);
 			}
 		}
@@ -1099,8 +1229,9 @@ void LSbox::executeRedistancing() {
 
 	m_outputDistance->clampValues(-m_grainHandler->delta, m_grainHandler->delta);
 
-	m_inputDistance->resize(m_outputDistance->getMinX(), m_outputDistance->getMinY(),
-			m_outputDistance->getMaxX(), m_outputDistance->getMaxY());
+	m_inputDistance->resize(m_outputDistance->getMinX(),
+			m_outputDistance->getMinY(), m_outputDistance->getMaxX(),
+			m_outputDistance->getMaxY());
 	// 	 set the references for the convolution step
 
 	//	if(id==1) plot_box(true, 2, "after_resize", true);
@@ -1164,11 +1295,11 @@ void LSbox::resizeGrid(int newSize) {
 			}
 			double ro, ru, newDistVal;
 			ro = 1 / (xr - xl) * ((xr - pointx) * m_outputDistance->getValueAt(
-					yo, xl) + (pointx - xl)
-					* m_outputDistance->getValueAt(yo, xr));
+					yo, xl) + (pointx - xl) * m_outputDistance->getValueAt(yo,
+					xr));
 			ru = 1 / (xr - xl) * ((xr - pointx) * m_outputDistance->getValueAt(
-					yu, xl) + (pointx - xl)
-					* m_outputDistance->getValueAt(yu, xr));
+					yu, xl) + (pointx - xl) * m_outputDistance->getValueAt(yu,
+					xr));
 			newDistVal = 1 / (yo - yu) * ((yo - pointy) * ru + (pointy - yu)
 					* ro);
 			if (newDistVal != newDistVal) {
@@ -1217,7 +1348,7 @@ for	(const auto& iterator : m_grainBoundary.getRawBoundary())
 		<< CLAMP((iterator.y-m_grainHandler->get_grid_blowup()) *m_grainHandler->get_h());
 		if (plot_energy)
 		{
-			file<<'\t'<< iterator.energy;
+			file<<'\t'<< iterator.energy * iterator.mob;
 		}
 		file<<endl;
 	}
@@ -1229,7 +1360,7 @@ else
 		file << (iterator.x) << "\t" << (iterator.y);
 		if (plot_energy)
 		{
-			file<<'\t'<< iterator.energy;
+			file<<'\t'<< iterator.energy * iterator.mob;
 		}
 		file<<endl;
 	}
@@ -1258,8 +1389,8 @@ void LSbox::plot_full_grain(int timestep, bool plot_energy,
 	ofstream& file = *output_file;
 
 	file << m_ID << "\t" << m_grainBoundary.getBoundarySegmentCount() << "\t"
-			<< m_orientationQuat[0] << "\t" << m_orientationQuat[1] << "\t" << m_orientationQuat[2]
-			<< "\t" << m_orientationQuat[3] << endl;
+			<< m_orientationQuat[0] << "\t" << m_orientationQuat[1] << "\t"
+			<< m_orientationQuat[2] << "\t" << m_orientationQuat[3] << endl;
 
 	if (plot_energy) {
 for	(const auto& iterator : m_grainBoundary.getRawBoundary())
@@ -1305,9 +1436,9 @@ void LSbox::plot_box_parameters(ofstream* dest_file) {
 	double euler[3];
 	m_grainHandler->mymath->quaternion2Euler(m_orientationQuat, euler);
 	file << m_ID << '\t' << m_grainBoundary.getDirectNeighboursCount() << '\t'
-			<< intersectsBoundaryGrain() << '\t' << getVolume() << '\t' << getPerimeter() << '\t'
-			<< m_energy << '\t' << euler[0] << '\t' << euler[1] << '\t'
-			<< euler[2];
+			<< intersectsBoundaryGrain() << '\t' << getVolume() << '\t'
+			<< getPerimeter() << '\t' << m_energy << '\t' << euler[0] << '\t'
+			<< euler[1] << '\t' << euler[2];
 
 	if (dest_file == NULL) {
 		file.close();
@@ -1316,44 +1447,48 @@ void LSbox::plot_box_parameters(ofstream* dest_file) {
 }
 
 void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) {
+	/*
+	 cout << " \nGrain  Info: " << endl;
+	 cout << " ID :" << m_ID << endl;
+	 cout << " xminIn, xmaxIn, yminIn, ymaxIn :" << m_inputDistance->getMinX()
+	 << " || " << m_inputDistance->getMaxX() << " || "
+	 << m_inputDistance->getMinY() << " || "
+	 << m_inputDistance->getMaxY() << endl;
+	 cout << " xminOut, xmaxOut, yminOut, ymaxOut :"
+	 << m_outputDistance->getMinX() << " || "
+	 << m_outputDistance->getMaxX() << " || "
+	 << m_outputDistance->getMinY() << " || "
+	 << m_outputDistance->getMaxY() << endl;
+	 cout << " xminId, xmaxId, yminId, ymaxId :" << m_IDLocal.getMinX()
+	 << " || " << m_IDLocal.getMaxX() << " || " << m_IDLocal.getMinY()
+	 << " || " << m_IDLocal.getMaxY() << endl;
+	 //     if (distanceplot==true) print_2dim_array(distance,ymax-ymin,xmax-xmin);
+	 // 		else cout << " no distance values in storage!" << endl;
+	 cout << " quaternion: " << m_orientationQuat[0] << " || "
+	 << m_orientationQuat[1] << " || " << m_orientationQuat[2] << " || "
+	 << m_orientationQuat[3] << endl;
+	 //	if (grainCharacteristics.empty() != true) {
+	 //		cout << " List of Neighbors : ";
+	 //		vector<characteristics>::iterator it;
+	 //		for (it = grainCharacteristics.begin(); it
+	 //				!= grainCharacteristics.end(); it++) {
+	 //			cout << (*it).directNeighbour->getID() << " || ";
+	 //		}
+	 //		cout << endl;
+	 //	} else
+	 //		cout << " neighbors unknown " << endl;
 
-	cout << " \nGrain  Info: " << endl;
-	cout << " ID :" << m_ID << endl;
-	cout << " xminIn, xmaxIn, yminIn, ymaxIn :" << m_inputDistance->getMinX()
-			<< " || " << m_inputDistance->getMaxX() << " || "
-			<< m_inputDistance->getMinY() << " || " << m_inputDistance->getMaxY()
-			<< endl;
-	cout << " xminOut, xmaxOut, yminOut, ymaxOut :"
-			<< m_outputDistance->getMinX() << " || " << m_outputDistance->getMaxX()
-			<< " || " << m_outputDistance->getMinY() << " || "
-			<< m_outputDistance->getMaxY() << endl;
-	cout << " xminId, xmaxId, yminId, ymaxId :" << m_IDLocal.getMinX() << " || " << m_IDLocal.getMaxX()
-			<< " || " << m_IDLocal.getMinY() << " || " << m_IDLocal.getMaxY() << endl;
-	//     if (distanceplot==true) print_2dim_array(distance,ymax-ymin,xmax-xmin);
-	// 		else cout << " no distance values in storage!" << endl;
-	cout << " quaternion: " << m_orientationQuat[0] << " || " << m_orientationQuat[1]
-			<< " || " << m_orientationQuat[2] << " || " << m_orientationQuat[3] << endl;
-	//	if (grainCharacteristics.empty() != true) {
-	//		cout << " List of Neighbors : ";
-	//		vector<characteristics>::iterator it;
-	//		for (it = grainCharacteristics.begin(); it
-	//				!= grainCharacteristics.end(); it++) {
-	//			cout << (*it).directNeighbour->getID() << " || ";
-	//		}
-	//		cout << endl;
-	//	} else
-	//		cout << " neighbors unknown " << endl;
-
-	if (m_secondOrderNeighbours.empty() != true) {
-		cout << " List of 2order Neighbors : ";
-		vector<LSbox*>::iterator it;
-		for (it = m_secondOrderNeighbours.begin(); it != m_secondOrderNeighbours.end(); it++) {
-			cout << (*it)->getID() << " || ";
-		}
-		cout << endl;
-	} else
-		cout << " neighbors_2order unknown " << endl;
-
+	 if (m_secondOrderNeighbours.empty() != true) {
+	 cout << " List of 2order Neighbors : ";
+	 vector<LSbox*>::iterator it;
+	 for (it = m_secondOrderNeighbours.begin(); it
+	 != m_secondOrderNeighbours.end(); it++) {
+	 cout << (*it)->getID() << " || ";
+	 }
+	 cout << endl;
+	 } else
+	 cout << " neighbors_2order unknown " << endl;
+	 */
 	if (distanceplot) {
 		stringstream filename;
 		ofstream datei;
@@ -1368,8 +1503,8 @@ void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) 
 							< m_outputDistance->getMaxY() && j
 							>= m_outputDistance->getMinX() && j
 							< m_outputDistance->getMaxX()) {
-						datei << ::std::fixed << m_outputDistance->getValueAt(i,
-								j) << "\t";
+						datei << ::std::fixed << m_outputDistance->getValueAt(
+								i, j) << "\t";
 					} else
 						datei << ::std::fixed << -m_grainHandler->delta << "\t";
 				}
@@ -1395,7 +1530,8 @@ void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) 
 			filename << "BoxDistance_" << simstep << "in_T" << loop << "_"
 					<< m_ID << ".gnu";
 			datei.open(filename.str());
-			for (int i = m_inputDistance->getMinY(); i < m_inputDistance->getMaxY(); i++) {
+			for (int i = m_inputDistance->getMinY(); i
+					< m_inputDistance->getMaxY(); i++) {
 				for (int j = m_inputDistance->getMinX(); j
 						< m_inputDistance->getMaxX(); j++) {
 					datei << ::std::fixed << m_inputDistance->getValueAt(i, j)
@@ -1414,8 +1550,8 @@ void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) 
 							< m_inputDistance->getMaxY() && j
 							>= m_inputDistance->getMinX() && j
 							< m_inputDistance->getMaxX()) {
-						datei << ::std::fixed
-								<< m_inputDistance->getValueAt(i, j) << "\t";
+						datei << ::std::fixed << m_inputDistance->getValueAt(i,
+								j) << "\t";
 					} else
 						datei << ::std::fixed << -m_grainHandler->delta << "\t";
 				}
@@ -1430,8 +1566,8 @@ void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) 
 				for (int j = m_IDLocal.getMinX(); j < m_IDLocal.getMaxX(); j++) {
 					double write = 0.0;
 					//if (IDLocal.getValueAt(i, j).getElementAt(0) != NULL)
-					if (m_grainHandler->getGrainByID(m_IDLocal.getValueAt(i, j).grainID)
-							!= NULL)
+					if (m_grainHandler->getGrainByID(
+							m_IDLocal.getValueAt(i, j).grainID) != NULL)
 						write = 1.0;
 					datei << ::std::fixed << write << "\t";
 				}
@@ -1440,31 +1576,57 @@ void LSbox::plot_box(bool distanceplot, int select, string simstep, bool local) 
 		}
 		datei.close();
 	}
-	if (!m_grainBoundary.getRawBoundary().empty()) {
-		for (unsigned int i = 0; i < m_grainBoundary.getRawBoundary().size(); i++) {
-			double px = m_grainBoundary.getRawBoundary()[i].x;
-			double py = m_grainBoundary.getRawBoundary()[i].y;
-			cout << py << "   " << px << endl;
-		}
-	}
+	/*if (!m_grainBoundary.getRawBoundary().empty()) {
+	 for (unsigned int i = 0; i < m_grainBoundary.getRawBoundary().size(); i++) {
+	 double px = m_grainBoundary.getRawBoundary()[i].x;
+	 double py = m_grainBoundary.getRawBoundary()[i].y;
+	 cout << py << "   " << px << endl;
+	 }
+	 }*/
 }
 
 double LSbox::computeMisorientation(LSbox* grain_2) {
+	double result=0.0;
 
-	double result = (*(m_grainHandler->mymath)).misorientationCubicQxQ(m_orientationQuat[0],
-			m_orientationQuat[1], m_orientationQuat[2], m_orientationQuat[3],
-			grain_2->m_orientationQuat[0], grain_2->m_orientationQuat[1],
-			grain_2->m_orientationQuat[2], grain_2->m_orientationQuat[3]);
-
-	if(result < 3 * PI/180.0)
-		result = 3 * PI/180.0;
-	return result;
+	if (Settings::LatticeType == E_CUBIC){
+		result = (*(m_grainHandler->mymath)).misorientationCubicQxQ(
+				m_orientationQuat[0], m_orientationQuat[1],
+				m_orientationQuat[2], m_orientationQuat[3],
+				grain_2->m_orientationQuat[0], grain_2->m_orientationQuat[1],
+				grain_2->m_orientationQuat[2], grain_2->m_orientationQuat[3]);
+	}
+	else if (Settings::LatticeType == E_HEXAGONAL) {
+			result = m_grainHandler->m_misOriHdl->calculateMisorientation_hexagonal(
+					m_orientationQuat, grain_2->m_orientationQuat);
+		}
+	if (result > 1 * PI / 180.0)
+		return result;
+	else
+		return 1 * PI / 180.0;
 }
 double LSbox::computeMisorientation(unsigned int grainID) {
 	return computeMisorientation(m_grainHandler->getGrainByID(grainID));
 }
 
-double LSbox::GBmobilityModel(double thetaMis) {
+double LSbox::GBmobilityModel(double thetaMis, LSbox* candidate) {
+	if (Settings::UseMobilityModel == 0) {
+		return 1.0;
+	} else if (Settings::UseMobilityModel == 1) {
+		return 1 - (1.0 * exp(-5. * (pow(thetaMis / (15 * PI / 180), 4.))));
+	} else if (Settings::UseMobilityModel == 2) {
+		if (thetaMis < 27 * PI / 180 || thetaMis > 33 * PI / 180)
+			return 0.1;
+		else
+			return (sin((thetaMis - 27 * PI / 180) / (6 * PI / 180) * PI) * 0.9)
+					+ 0.1;
+	} else if (Settings::UseMobilityModel == 3) {
+		double d1 = sqrt(m_volume);
+		double d2 = sqrt(candidate->getVolume());
+		double result = abs(d2-d1) / sqrt(m_grainHandler->get_maxVol());
+		if (result < 0.2)
+			return 0.2;
+		return result;
+	}
 	return 1.0;
 }
 
@@ -1625,8 +1787,8 @@ void LSbox::measureAngles(vector<double>& turningAngles,
 
 		//! save Regression points
 		if (Settings::ResearchMode && m_grainHandler->project
-				== E_TRIPLE_JUNCTION_DRAG_SINGLE && m_grainHandler->calcRegression
-				&& m_ID == 1) {
+				== E_TRIPLE_JUNCTION_DRAG_SINGLE
+				&& m_grainHandler->calcRegression && m_ID == 1) {
 
 			SPoint thirdPointLeft;
 			SPoint thirdPointRight;
@@ -1802,7 +1964,8 @@ void LSbox::outputMemoryUsage(ofstream& output) {
 			+ m_IDLocal.getTotalMemoryUsed() << endl;
 
 	output << m_outputDistance->getMaxX() - m_outputDistance->getMinX() << " "
-			<< m_outputDistance->getMaxY() - m_outputDistance->getMinY() << endl;
+			<< m_outputDistance->getMaxY() - m_outputDistance->getMinY()
+			<< endl;
 }
 
 vector<int> LSbox::getDirectNeighbourIDs() {
@@ -1813,19 +1976,24 @@ vector<double> LSbox::getGBLengths() {
 	return m_grainBoundary.getGbSegmentLength();
 }
 
-void LSbox::computeDirectNeighbours(const RTree<unsigned int, int, 2, float>& tree)
-{
+void LSbox::computeDirectNeighbours(
+		const RTree<unsigned int, int, 2, float>& tree) {
 	int min[2], max[2];
-	min[0] = getMinX(); min[1] = getMinY();
-	max[0] = getMaxX(); max[1] = getMaxY();
-	vector<unsigned int>	intersectingGrains;
+	min[0] = getMinX();
+	min[1] = getMinY();
+	max[0] = getMaxX();
+	max[1] = getMaxY();
+	vector<unsigned int> intersectingGrains;
 	tree.Search(min, max, intersectingGrains);
-	for(unsigned int k=0; k < intersectingGrains.size(); k++)
-	{
-		if(m_ID != intersectingGrains[k])
-		{
-			m_secondOrderNeighbours.push_back(m_grainHandler->getGrainByID(intersectingGrains[k]));
-			m_grainBoundary.addDirectNeighbourManual(m_grainHandler->getGrainByID(intersectingGrains[k]));
+	for (unsigned int k = 0; k < intersectingGrains.size(); k++) {
+		if (m_ID != intersectingGrains[k]) {
+			m_secondOrderNeighbours.push_back(
+					m_grainHandler->getGrainByID(intersectingGrains[k]));
+			m_grainBoundary.addDirectNeighbourManual(
+					m_grainHandler->getGrainByID(intersectingGrains[k]));
 		}
 	}
 }
+
+
+

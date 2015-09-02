@@ -27,11 +27,11 @@
  */
 struct SPoint
 {
-	SPoint() : x(-1), y(-1),energy(0)
+	SPoint() : x(-1), y(-1),energy(0),mob(1)
 	{}
-	SPoint(double _x, double _y, double _energy) : x(_x), y(_y), energy(_energy)
+	SPoint(double _x, double _y, double _energy, double _mob) : x(_x), y(_y), energy(_energy), mob(_mob)
 	{}
-	SPoint(const SPoint& other) : x(other.x), y(other.y), energy(other.energy)
+	SPoint(const SPoint& other) : x(other.x), y(other.y), energy(other.energy), mob(other.mob)
 	{}
 	double squaredDistanceTo(const SPoint& other) const
 	{
@@ -47,14 +47,14 @@ struct SPoint
 	}
 	SPoint operator+(const SPoint& other) const
 	{
-		SPoint result(0,0,0);
+		SPoint result(0,0,0,1);
 		result.x = this->x + other.x;
 		result.y = this->y + other.y;
 		return result;
 	}
 	SPoint operator-(const SPoint& other) const
 	{
-		SPoint result(0,0,0);
+		SPoint result(0,0,0,1);
 		result.x = this->x - other.x;
 		result.y = this->y - other.y;
 		return result;
@@ -81,6 +81,7 @@ struct SPoint
 	double x;
 	double y;
 	double energy;
+	double mob;
 };
 
 #endif	//__SPOINT__

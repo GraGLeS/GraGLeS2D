@@ -22,7 +22,7 @@
 #include <iostream>
 #include <cmath>
 #include "ExpandingVector.h"
-
+#include <iostream>
 /*!
  * \class DimensionalBuffer
  * \brief Class that encapsulates a dimensional buffer
@@ -114,7 +114,6 @@ public:
 		m_xMax = lowerRightX;
 		m_yMin = upperLeftY;
 		m_yMax = lowerRightY;
-
 		m_values.resize((m_xMax - m_xMin) * (m_yMax - m_yMin));
 	}
 

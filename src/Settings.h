@@ -46,6 +46,13 @@ enum E_CONVOLUTION_MODE
 	E_INVALID_VALUE
 };
 
+enum E_LATTICE_TYPE
+{
+	E_CUBIC,
+	E_HEXAGONAL,
+	E_INVALID_LATTICE
+};
+
 /*!
  * \enum E_RESEARCH_PROJECT
  * \brief Enumeration used to control the research project execution.
@@ -74,11 +81,13 @@ class Settings
 	static E_MICROSTRUCTURE_GEN_MODE MicrostructureGenMode;
 	static E_RESEARCH_PROJECT ResearchProject;
 	static std::string ReadFromFilename;
+	static unsigned long LatticeType;
 	static double HAGB;
 	static double TriplePointDrag;
-	static bool UseMobilityFactor;
+	static unsigned long UseMobilityModel;
 	static bool IsIsotropicNetwork;
 	static bool UseTexture;
+	static double MaxMisOrientation;
 	static bool ExecuteInParallel;
 	static bool GridCoarsement;
 	static bool ResearchMode;
@@ -88,7 +97,7 @@ class Settings
 	static double ConstantSectorRadius;
 	static double InterpolatingSectorRadius;
 	static unsigned long NeighbourTracking;
-	static unsigned long DislocationEnergy;
+
 
 	static void initializeParameters(std::string filename = "");
 	static rapidxml::xml_node<>* generateXMLParametersNode(rapidxml::xml_document<>* root, const char* filename, int loop, int grains);

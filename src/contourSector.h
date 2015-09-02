@@ -40,7 +40,7 @@ class LSbox;
  * \class ContourSector
  * \brief Class that encapsulates a Contour Sector.
  *
- * This class handles the different  types of sectors defined i the convolution correction
+ * This class handles the different  types of sectors used in the convolution correction
  * method. Each sector is represented by a start point and an end point on the contour line.
  * The winding of the contour line is counter clockwise and thus a left end point and a right
  * end point can be defined. The Constant Sectors are an area around triple and quadruple junctions

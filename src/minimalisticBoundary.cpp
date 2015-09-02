@@ -48,7 +48,7 @@ void MinimalisticBoundary::orderCloudInContour()
 		}
 	};
 
-	SPoint massCenter(0,0,0);
+	SPoint massCenter(0,0,0,0);
 	for(unsigned int i=0; i<m_minimalContour.size(); i++)
 		massCenter = massCenter + m_minimalContour[i];
 	massCenter = massCenter * (1.0 / m_minimalContour.size());
@@ -182,7 +182,7 @@ int MinimalisticBoundary::projectToMinimalBondary(SPoint point, double& out_lamb
 double MinimalisticBoundary::getWeight(int i, int j, LSbox* owner)
 {
 	double lambda = 0;
-	int segment = projectToMinimalBondary(SPoint(j, i, 0), lambda);
+	int segment = projectToMinimalBondary(SPoint(j, i, 0, 1), lambda);
 
 	for (unsigned int q = 0; q < m_minimalConstantSectors.size(); q++)
 		if (m_minimalConstantSectors[q].isSegmentWithinSector(m_minimalContour, segment)) {

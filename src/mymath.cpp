@@ -17,7 +17,7 @@
 */
 #include "mymath.h"
 #include "applic.h"
-
+#include "SCORE_Random.h"
 
 
 //###LB: Unless indicated, all functions in radians.
@@ -670,7 +670,7 @@ void mathMethods::misorientationQuaternionCubic( double* p, double* q, double* q
 
 	Real rq[4];
 
-	int mi;
+	int mi=0;
 	Real max=0.0;
 
 	for( int i=0;i<6;i++ )						//Determing the quaternion with the maximal component and the component itself

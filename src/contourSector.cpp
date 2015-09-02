@@ -268,5 +268,5 @@ double ContourSector::getWeight(LSbox* owner, vector<SPoint>* contour_grain, int
 			return interpolator*left_w + (1-interpolator)*right_w;
 
 	}
-	return 0;
+	return 0.01; //When does this happen??
 }

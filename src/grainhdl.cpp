@@ -24,6 +24,9 @@
 #include <sys/time.h>
 #include "rapidxml.hpp"
 #include "rapidxml_print.hpp"
+#ifdef USE_MKL
+#include "mkl.h"
+#endif
 
 using namespace rapidxml;
 
@@ -32,13 +35,14 @@ grainhdl::grainhdl() :
 }
 grainhdl::~grainhdl() {
 	delete mymath;
+	if(Settings::LatticeType == E_HEXAGONAL) delete m_misOriHdl ;
 }
 
 void grainhdl::setSimulationParameter() {
 	initEnvironment();
 	mymath = new mathMethods();
 	// 	readInit();
-
+	if(Settings::LatticeType == E_HEXAGONAL) m_misOriHdl = new MisorientationHdl;
 	//! The NumberOfParticles passed via parameters.xml is altered
 	//! for MicrostructureGenMode 4
 	if (Settings::MicrostructureGenMode == E_GENERATE_TESTCASE) {
@@ -52,8 +56,9 @@ void grainhdl::setSimulationParameter() {
 	ngrains = Settings::NumberOfParticles;
 	currentNrGrains = ngrains;
 	realDomainSize = sqrt(Settings::NumberOfParticles) * Settings::NumberOfPointsPerGrain; // half open container of VORO++
-	discreteEnergyDistribution.resize(Settings::DiscreteSamplingRate);
-	fill(discreteEnergyDistribution.begin(), discreteEnergyDistribution.end(),
+	ds = (Settings::ConstantSectorRadius*2 + Settings::InterpolatingSectorRadius *2) / double(realDomainSize);
+	MODF.resize(Settings::DiscreteSamplingRate);
+	fill(MODF.begin(), MODF.end(),
 			0);
 
 	switch (Settings::ConvolutionMode) {
@@ -88,15 +93,12 @@ void grainhdl::setSimulationParameter() {
 	//!grains.resize(Settings::NumberOfParticles + 1);
 	grains.resize(Settings::NumberOfParticles + 1);
 
-	KernelNormalizationFactor = 2 * (Settings::NumberOfPointsPerGrain + (2
-			* grid_blowup)) * (Settings::NumberOfPointsPerGrain + (2
-			* grid_blowup));
 
 	switch (Settings::MicrostructureGenMode) {
 	case E_GENERATE_WITH_VORONOY: {
 		if (Settings::UseTexture) {
 			bunge = new double[3] { PI / 2, PI / 2, PI / 2 };
-			deviation = 15 * PI / 180;
+			deviation = Settings::MaxMisOrientation * PI / 180;
 		} else {
 			bunge = NULL;
 			deviation = 0;
@@ -172,6 +174,10 @@ void grainhdl::setSimulationParameter() {
 		}
 
 		break;
+	}
+	case E_INVALID_VAL: {
+	  cerr << "Invalid value for 'MicrostructureGenMode'." << endl;
+	  exit(-1);
 	}
 	}
 
@@ -290,30 +296,60 @@ void grainhdl::readMicrostructure() {
 		exit(2);
 	}
 	int id;
-	double q1, q2, q3, q4,xl, yl;
+	double* q1, *q2, *q3,* q4;
+	double xl, yl;
 
-	int nvertices;
+	int* nvertices = new int[ngrains+1];
 	//double* vertices = new double[1000];
-	vector<double> vertices;
-	vertices.resize(2048);
+	vector<double*> vertices;
+	vertices.resize(ngrains+1);
+	q1 = new double[ngrains+1];
+	q2 = new double[ngrains+1];
+	q3 = new double[ngrains+1];
+	q4 = new double[ngrains+1];
 
 	for (int nn = 1; nn <= ngrains; nn++) {
 
-		fscanf(levelset, "%d\t %d\t %lf\t %lf\t%lf\t%lf\n", &id, &nvertices,
-				&q1, &q2, &q3, &q4);
-		vertices.resize(nvertices*2);
-		for (int j = 0; j < nvertices; j++) {
+		fscanf(levelset, "%d\t %d\t %lf\t %lf\t%lf\t%lf\n", &id, &nvertices[nn],
+				&q1[nn], &q2[nn], &q3[nn], &q4[nn]);
+
+		vertices[nn] = new double[nvertices[nn]*2];
+		for (int j = 0; j < nvertices[nn]; j++) {
 			fscanf(levelset, "%lf\t %lf\n", &xl, &yl);
-			vertices[2 * j] = xl;
-			vertices[(2 * j) + 1] = yl;
+			vertices[nn][2 * j] = xl;
+			vertices[nn][(2 * j) + 1] = yl;
+			if(xl < 0 || yl <0)
+				cout << "warning: corrupted input file for grain: " << id << endl;
 		}
 		fscanf(levelset, "\n");
-		LSbox* newBox =
-				new LSbox(id, nvertices, &vertices[0], q1, q2, q3, q4, this);
-		grains[nn] = newBox;
+
 	}
 	fclose(levelset);
+
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
+		{
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			LSbox* newBox =
+					new LSbox(id, nvertices[id], vertices[id], q1[id], q2[id], q3[id], q4[id], this);
+			grains[id] = newBox;
+		}
+	}
 }
+	for (int nn = 1; nn <= ngrains; nn++) {
+		delete[] vertices[nn];
+	}
+	delete [] q1;
+	delete [] q2;
+	delete [] q3;
+	delete [] q4;
+	delete [] nvertices;
+}
+
+
 
 void grainhdl::readMicrostructureFromVertex() {
 	FILE * levelset;
@@ -382,18 +418,18 @@ void grainhdl::readMicrostructureFromVertex() {
 }
 
 void grainhdl::distanceInitialisation() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if(grains[id] != NULL)
-					grains[id]->calculateDistanceFunction();
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if(grains[id] != NULL)
+				grains[id]->calculateDistanceFunction();
 		}
+	}
+}
 }
 
 void grainhdl::convolution(double& plan_overhead) {
@@ -406,18 +442,18 @@ void grainhdl::convolution(double& plan_overhead) {
 	createConvolutionPlans();
 	gettimeofday(&t, NULL);
 	plan_overhead += t.tv_sec + t.tv_usec/1000000 - timer;
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if(grains[id] != NULL)
-					grains[id]->executeConvolution(m_ThreadMemPool[omp_get_thread_num()]);
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if(grains[id] != NULL)
+				grains[id]->executeConvolution(m_ThreadMemPool[omp_get_thread_num()]);
 		}
+	}
+}
 	gettimeofday(&t, NULL);
 	timer = t.tv_sec + t.tv_usec/1000000;
 	destroyConvolutionPlans();
@@ -426,89 +462,93 @@ void grainhdl::convolution(double& plan_overhead) {
 }
 
 void grainhdl::createConvolutionPlans() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if(grains[id] != NULL)
-					grains[id]->preallocateMemory(m_ThreadMemPool[omp_get_thread_num()]);
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if(grains[id] != NULL)
+				grains[id]->preallocateMemory(m_ThreadMemPool[omp_get_thread_num()]);
 		}
+	}
+}
+#ifdef USE_FFTW
 	for(unsigned int i=1; i<grains.size(); i++)
 	{
 		if(grains[i] != NULL)
 			grains[i]->makeFFTPlans(m_ThreadMemPool[(i - 1)%Settings::MaximumNumberOfThreads]);
 	}
+#endif
 }
 
 void grainhdl::destroyConvolutionPlans() {
+#ifdef USE_FFTW
 	for(unsigned int i=1; i<grains.size(); i++)
 	{
 		if(grains[i] != NULL)
 			grains[i]->destroyFFTWs();
 	}
+#endif
 }
 
 void grainhdl::comparison_box() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if(grains[id] != NULL)
 			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if(grains[id] != NULL)
-				{
-					grains[id]->executeComparison();
-					grains[id]->executeSetComparison();
-				}
+				grains[id]->executeComparison();
+				grains[id]->executeSetComparison();
 			}
 		}
+	}
+}
 }
 
 void grainhdl::level_set() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if (grains[id] == NULL)
-					continue;
-				if (grains[id]->grainExists() == false) {
-					delete grains[id];
-					grains[id] = NULL;
-				} else
-					grains[id]->extractContour();
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if (grains[id] == NULL)
+				continue;
+			if (grains[id]->grainExists() == false) {
+				delete grains[id];
+				grains[id] = NULL;
+			} else
+				grains[id]->extractContour();
 		}
+	}
+}
 }
 
 void grainhdl::redistancing() {
 	currentNrGrains = 0;
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if (grains[id] == NULL)
-					continue;
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if (grains[id] == NULL)
+				continue;
 #pragma omp atomic
-				currentNrGrains += 1;
-				grains[id]->computeVolumeAndEnergy();
-				grains[id]->executeRedistancing();
-			}
+			currentNrGrains += 1;
+			grains[id]->computeVolumeAndEnergy();
+			grains[id]->executeRedistancing();
 		}
+	}
+}
 }
 
 void grainhdl::save_texture() {
@@ -524,16 +564,20 @@ void grainhdl::save_texture() {
 	myfile.open(filename.str());
 
 	filename.str("");
-	filename << "EnergyLengthDistribution_" << loop << ".txt";
+	filename << "MODF_" << loop << ".txt";
 	enLenDis = fopen(filename.str().c_str(), "w");
 
-	double dh = Settings::HAGB / (double) Settings::DiscreteSamplingRate;
+	double dh;
+	if (Settings::LatticeType == 0)
+		dh = 62.8 / (double) Settings::DiscreteSamplingRate;
+	else
+		dh = 92. / (double) Settings::DiscreteSamplingRate;
 	double euler[3];
 	vector<characteristics>::iterator it2;
 	vector<LSbox*>::iterator it;
 
-	std::fill(discreteEnergyDistribution.begin(),
-			discreteEnergyDistribution.end(), 0.0);
+	std::fill(MODF.begin(),
+			MODF.end(), 0.0);
 
 	for (it = ++grains.begin(); it != grains.end(); it++) {
 		if (*it != NULL && (*it)->grainExists() == true && (*it)->isMotionRegular() == true) {
@@ -543,12 +587,12 @@ void grainhdl::save_texture() {
 			(*mymath).quaternion2Euler((*it)->getOrientationQuat(), euler);
 
 			totalLength += (*it)->getPerimeter() * 0.5;
-			map<int, double>& currentEnergyDistribution = (*it)->getDiscreteEnergyDistribution();
-			for(const auto& iterator : currentEnergyDistribution)
+			map<int, double>& localMODF = (*it)->getlocalMODF();
+			for(const auto& iterator : localMODF)
 			{
-				if(iterator.first < discreteEnergyDistribution.size())
+				if(iterator.first < MODF.size())
 				{
-					discreteEnergyDistribution[iterator.first] += iterator.second / 2;
+					MODF[iterator.first] += iterator.second / 2;
 				}
 			}
 			//! If ResearchMode is activated additional data (e.g. the mean (euclidean) triple-junction-distance) is stored in the Texture files
@@ -586,12 +630,12 @@ void grainhdl::save_texture() {
 			myfile << endl;
 			double sum = 0.0;
 			for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
-				sum += discreteEnergyDistribution[i];
+				sum += MODF[i];
 			}
 			for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
-				if (discreteEnergyDistribution[i] > 0)
-					discreteEnergyDistribution[i]
-							= discreteEnergyDistribution[i] / sum;
+				if (MODF[i] > 0)
+					MODF[i]
+							= MODF[i] / sum;
 			}
 
 		}
@@ -600,9 +644,9 @@ void grainhdl::save_texture() {
 	if (!Settings::IsIsotropicNetwork) {
 		for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
 			fprintf(enLenDis, "%lf\t%lf\n", (float) (dh * (i + 1)),
-					(float) discreteEnergyDistribution[i]);
+					(float) MODF[i]);
 			printf("%lf\t%lf\n", (float) (dh * (i + 1)),
-					(float) discreteEnergyDistribution[i]);
+					(float) MODF[i]);
 		}
 	}
 	totalenergy.push_back(0.5 * total_energy);
@@ -620,6 +664,7 @@ void grainhdl::save_texture() {
 
 }
 
+double parallelRest=0;
 double convo_time=0;
 double comparison_time=0;
 double levelset_time=0;
@@ -630,37 +675,52 @@ void grainhdl::run_sim() {
 	double timer;
 	double overhead;
 	distanceInitialisation();
+	get_biggestGrainVol();
 	simulationTime = 0;
 	find_neighbors();
 	for (loop = Settings::StartTime; loop <= Settings::StartTime
 			+ Settings::NumberOfTimesteps; loop++) {
-		gridCoarsement();
+		gettimeofday(&time, NULL);
+		timer = time.tv_sec + time.tv_usec/1000000.0;
+			gridCoarsement();
+		gettimeofday(&time, NULL);
+		parallelRest+= time.tv_sec + time.tv_usec/1000000.0 - timer;
 
 		gettimeofday(&time, NULL);
 		timer = time.tv_sec + time.tv_usec/1000000.0;
-		convolution(overhead);
+			convolution(overhead);
 		plan_overhead += overhead;
 		gettimeofday(&time, NULL);
 		convo_time += time.tv_sec + time.tv_usec/1000000.0 - timer;
 
-		switchDistancebuffer();
-		updateSecondOrderNeighbors();
 		gettimeofday(&time, NULL);
 		timer = time.tv_sec + time.tv_usec/1000000.0;
-		comparison_box();
+			switchDistancebuffer();
+			updateSecondOrderNeighbors();
+		gettimeofday(&time, NULL);
+		parallelRest+= time.tv_sec + time.tv_usec/1000000.0 - timer;
+
+		gettimeofday(&time, NULL);
+		timer = time.tv_sec + time.tv_usec/1000000.0;
+			comparison_box();
 		gettimeofday(&time, NULL);
 		comparison_time += time.tv_sec + time.tv_usec/1000000.0 - timer;
 
-		switchDistancebuffer();
 		gettimeofday(&time, NULL);
 		timer = time.tv_sec + time.tv_usec/1000000.0;
-		level_set();
+			switchDistancebuffer();
+		gettimeofday(&time, NULL);
+		parallelRest+= time.tv_sec + time.tv_usec/1000000.0 - timer;
+
+		gettimeofday(&time, NULL);
+		timer = time.tv_sec + time.tv_usec/1000000.0;
+			level_set();
 		gettimeofday(&time, NULL);
 		levelset_time += time.tv_sec + time.tv_usec/1000000.0 - timer;
 
 		gettimeofday(&time, NULL);
 		timer = time.tv_sec + time.tv_usec/1000000.0;
-		redistancing();
+			redistancing();
 		gettimeofday(&time, NULL);
 		redistancing_time += time.tv_sec + time.tv_usec/1000000.0 - timer;
 
@@ -695,6 +755,7 @@ void grainhdl::run_sim() {
 					<< endl;
 			break;
 		}
+		get_biggestGrainVol();
 	}
 	// 	utils::CreateMakeGif();
 	cout << "Simulation complete." << endl;
@@ -705,6 +766,14 @@ void grainhdl::run_sim() {
 	cout << "Comparison time: "<< comparison_time << endl;
 	cout << "Redistancing time: "<< redistancing_time << endl;
 	cout << "Levelset time: "<< levelset_time << endl;
+	cout << "GridCoarse/SwitchBuffer/UpNeigh: "<< parallelRest << endl;
+	cout << "Sum parallel regions: " << convo_time+comparison_time+levelset_time+parallelRest+redistancing_time << endl;
+#ifdef USE_MKL
+	int numMKLBuffer;
+	mkl_mem_stat(&numMKLBuffer);
+	cout << "Memory used by MKL : "<< numMKLBuffer << endl;
+#endif
+
 }
 
 void grainhdl::saveMicrostructure() {
@@ -765,19 +834,19 @@ void grainhdl::save_sim() {
 }
 
 void grainhdl::updateSecondOrderNeighbors() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if (grains[id] == NULL)
-					continue;
-				grains[id]->computeSecondOrderNeighbours();
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if (grains[id] == NULL)
+				continue;
+			grains[id]->computeSecondOrderNeighbours();
 		}
+	}
+}
 }
 
 void grainhdl::find_neighbors() {
@@ -792,19 +861,19 @@ void grainhdl::find_neighbors() {
 		tree.Insert(min, max, i);
 	}
 
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				if (grains[id] == NULL)
-					continue;
-				grains[id]->computeDirectNeighbours(tree);
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if (grains[id] == NULL)
+				continue;
+			grains[id]->computeDirectNeighbours(tree);
 		}
+	}
+}
 }
 
 
@@ -902,10 +971,9 @@ void grainhdl::removeGrain(int id) {
 }
 
 void grainhdl::switchDistancebuffer() {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+		for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
 		{
 			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 			{
@@ -916,6 +984,7 @@ void grainhdl::switchDistancebuffer() {
 			}
 		}
 }
+}
 
 void grainhdl::gridCoarsement() {
 	if ((double)currentNrGrains/(double)ngrains < Settings::GridCoarsementGradient
@@ -923,20 +992,20 @@ void grainhdl::gridCoarsement() {
 		int newSize = sqrt(currentNrGrains) * Settings::NumberOfPointsPerGrain;
 		cout << "coarsing the current grid in Timestep: "<< loop <<endl;
 		cout<< "newSize :" << newSize << endl << endl;
-		unsigned int j;
-	#pragma omp parallel for private(j)
-		for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-			for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+		for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+		{
+			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 			{
-				if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-				{
-					int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-					if (grains[id] == NULL)
-						continue;
-					grains[id]->resizeGrid(newSize);
-				}
-
+				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+				if (grains[id] == NULL)
+					continue;
+				grains[id]->resizeGrid(newSize);
 			}
+
+		}
+}
 		realDomainSize = newSize;
 		delta = Settings::DomainBorderSize * 1 / double(realDomainSize);
 		ngridpoints = realDomainSize + 2 * grid_blowup;
@@ -944,30 +1013,32 @@ void grainhdl::gridCoarsement() {
 		//! DISCREPANCY: Compare to the application of dt in the convolution, time decreasing factor 0.8
 		dt = 1.0 / double(realDomainSize * realDomainSize);
 		ngrains= currentNrGrains;
-	#pragma omp parallel for private(j)
-		for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-			for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
-			{
-				if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
-				{
-					int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-					if (grains[id] == NULL)
-						continue;
-					grains[id]->recalculateIDLocal();
-				}
-			}
-	#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+		for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
 		{
 			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
 			{
 				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
 				if (grains[id] == NULL)
 					continue;
-				grains[id]->extractContour();
+				grains[id]->recalculateIDLocal();
 			}
 		}
+}
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < grains.size())
+		{
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			if (grains[id] == NULL)
+				continue;
+			grains[id]->extractContour();
+		}
+	}
+}
 
 	} else {
 		switchDistancebuffer();
@@ -1002,18 +1073,18 @@ void grainhdl::initEnvironment() {
 }
 
 void grainhdl::buildBoxVectors(vector<vector<SPoint>>& contours) {
-	unsigned int j;
-#pragma omp parallel for private(j)
-	for(unsigned int i=0; i< Settings::MaximumNumberOfThreads; i++)
-		for(j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+#pragma omp parallel
+{
+	for(unsigned int j=0; j < Settings::NumberOfParticles/Settings::MaximumNumberOfThreads + 1; j++)
+	{
+		if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < contours.size())
 		{
-			if(j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num() < contours.size())
-			{
-				int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
-				LSbox* grain = new LSbox(id, contours[id], this);
-				grains[id] = grain;
-			}
+			int id = j*Settings::MaximumNumberOfThreads + 1 + omp_get_thread_num();
+			LSbox* grain = new LSbox(id, contours[id], this);
+			grains[id] = grain;
 		}
+	}
+}
 }
 
 void grainhdl::set_h(double hn) {
@@ -1100,3 +1171,12 @@ void grainhdl::setResearchAdjustments() {
 	return;
 }
 
+void grainhdl::get_biggestGrainVol(){
+	maxVol =0.0;
+	for (auto it = ++grains.begin(); it != grains.end(); it++) {
+			if (*it == NULL)
+				continue;
+			if (maxVol < (*it)->getVolume())
+				maxVol = (*it)->getVolume();
+	}
+}

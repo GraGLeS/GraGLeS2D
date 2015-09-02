@@ -65,7 +65,7 @@ public:
 	inline int  getDirectNeighboursCount() { return m_directNeighbourhood.size(); }
 	inline void addDirectNeighbourManual( LSbox* neighbour ) { m_directNeighbourhood.push_back(characteristics(neighbour, 0, 0, 0)); }
 	characteristics& getDirectNeighbourCaracteristic(LSbox* neighbour);
-	map<int, double>& getDiscreteEnergyDistribution();
+	map<int, double>& getlocalMODF();
 	bool isBoxDirectNeighbour(LSbox* neighbour);
 	SPoint calculateCentroid();
 private:
@@ -80,7 +80,7 @@ private:
 	vector<characteristics>	m_directNeighbourhood;
 	vector<SPoint>			m_grainBoundary;
 	vector<GrainJunction>	m_grainJunctions;
-	map<int,double>			m_discreteEnergyDistribution;
+	map<int,double>			m_localMODF;
 	int						m_grainBoundaryTimestep;
 	int						m_sectorsTimestep;
 	int						m_directNeighbourhoodTimestep;

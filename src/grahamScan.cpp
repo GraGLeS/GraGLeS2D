@@ -37,8 +37,8 @@ GrahamScan::GrahamScan(voro::voronoicell_neighbor& voro_cell, unsigned int cellI
 			x1[1] = vv[3 * ii + 1];
 			x2[0] = vv[3 * k];
 			x2[1] = vv[3 * k + 1];
-			pointset.insert(SPoint(x1[1], x1[0], 0));
-			pointset.insert(SPoint(x2[1], x2[0], 0));
+			pointset.insert(SPoint(x1[1], x1[0], 0, 1));
+			pointset.insert(SPoint(x2[1], x2[0], 0, 1));
 		}
 	}
 	std::copy(pointset.begin(), pointset.end(), std::back_inserter(m_sortedPoints));

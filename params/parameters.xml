@@ -16,30 +16,35 @@
    -->
    <ReadFromFilename>lsInputQuadrat.dat</ReadFromFilename>
    <HAGB> 1.0 </HAGB>
-   <TriplePointDrag> 1.0 </TriplePointDrag>
-     <!-- USAGE:
-    Input is a number larger than 0. This number is used as a coefficient 
-    and determines the magnitude of the drag. 
-   -->
+   <TriplePointDrag> 10000000.0 </TriplePointDrag>
+    <!-- USAGE:
+        Input is a number larger than 0. This number is the absolute mobility of the point. 1.000.000,0 is approx. infinity
+    -->
+
    <UseMobilityFactor> 0</UseMobilityFactor>
    <!-- USAGE:
-    Input is 0 or 1 as a boolean. For 1 a mobility model is applied (comming soon). 
+	0 == off
+    Input is 0 , 1 , 2,  3 as a boolean. Check source code for usage. 
    -->
    <IsIsotropicNetwork> 1 </IsIsotropicNetwork>
     <!-- USAGE:
    	0	considers anisotropic grain boundary properties
-   	1	ignores Texture, Energies and Mobilitys are all equal to one. Execution is much faster.
+   	1	ignores Texture, Energies and Mobilitys. all equal to one. Execution is much faster.
    -->
    <UseTexture> 1 </UseTexture>
    <!-- USAGE:
    	0	generates a random texture
-   	1	generates a fibre texture with maximum misorientation 15° (hardcoded)
+   	1	generates a fibre texture with MaxMisOrientation (angle in degree)
+   -->
+   <MaxMisOrientation> 25 </MaxMisOrientation>
+   <!-- USAGE:
+   if Usetexture == 1, you can specify the maximum misorientation for a fibre texture here.
    -->
    <ExecuteInParallel> 1 </ExecuteInParallel>
    <MaximumNumberOfThreads> 8 </MaximumNumberOfThreads>
    <!-- USAGE:
 	currently ignored. if ExecuteInParallel == 1, you will take omp_get_max_threads()
-	see grainhdl::initEnvironment() 
+	see grainhdl::initEnvironment() modify it there, if you want to specify.
    -->
    <GridCoarsement> 1 </GridCoarsement>
     <!-- USAGE:
@@ -56,7 +61,7 @@
    <ResearchMode> 0 </ResearchMode>
    <!-- USAGE:
    	0 	Energies defined by misorientation
-	1	Energies set to 1 - use Texture == false (nessecary for Triple Junction experiments)			
+	1	Energies set to 1 (nessecary for Triple Junction experiments)			
    -->
    <ResearchProject> 0 </ResearchProject>
    <!-- USAGE:
@@ -67,5 +72,5 @@
    <ConstantSectorRadius> 3 </ConstantSectorRadius>
    <InterpolatingSectorRadius> 2</InterpolatingSectorRadius>
    <NeighbourTracking> 0</NeighbourTracking>
-   <DislocationEnergy> 0</DislocationEnergy>
+   
 </Parameters>

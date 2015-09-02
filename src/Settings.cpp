@@ -39,11 +39,13 @@ E_CONVOLUTION_MODE Settings::ConvolutionMode = E_INVALID_VALUE;
 E_MICROSTRUCTURE_GEN_MODE Settings::MicrostructureGenMode = E_INVALID_VAL;
 E_RESEARCH_PROJECT Settings::ResearchProject = E_DEFAULT;
 string Settings::ReadFromFilename;
+unsigned long Settings::LatticeType = 0;
 double Settings::HAGB = 0.0;
 double Settings::TriplePointDrag = 0.0;
-bool Settings::UseMobilityFactor = false;
+unsigned long Settings::UseMobilityModel = 0;
 bool Settings::IsIsotropicNetwork = false;
 bool Settings::UseTexture = false;
+double Settings::MaxMisOrientation = 0.0;
 bool Settings::ExecuteInParallel = false;
 bool Settings::GridCoarsement = false;
 //! Enables the generation and capture of a wider spectrum of analysing data
@@ -51,7 +53,7 @@ bool Settings::ResearchMode = false;
 double Settings::ConstantSectorRadius = 0.0;
 double Settings::InterpolatingSectorRadius = 0.0;
 unsigned long Settings::NeighbourTracking = 0;
-unsigned long Settings::DislocationEnergy = 0;
+
 
 void Settings::initializeParameters(string filename) {
 	if (0 == filename.compare(""))
@@ -116,6 +118,12 @@ void Settings::initializeParameters(string filename) {
 	if (0 != rootNode->first_node("ReadFromFilename")) {
 		ReadFromFilename = rootNode->first_node("ReadFromFilename")->value();
 	}
+	if (0 != rootNode->first_node("LatticeType")) {
+		LatticeType = (E_LATTICE_TYPE) std::stoi(
+					rootNode->first_node("LatticeType")->value());
+			if (LatticeType >= E_INVALID_LATTICE)
+				LatticeType = E_INVALID_LATTICE;
+		}
 	if (0 != rootNode->first_node("HAGB")) {
 		HAGB = std::stod(rootNode->first_node("HAGB")->value());
 	}
@@ -123,9 +131,9 @@ void Settings::initializeParameters(string filename) {
 		TriplePointDrag = std::stod(
 				rootNode->first_node("TriplePointDrag")->value());
 	}
-	if (0 != rootNode->first_node("UseMobilityFactor")) {
-		UseMobilityFactor = (bool) std::stoul(rootNode->first_node(
-				"UseMobilityFactor")->value());
+	if (0 != rootNode->first_node("UseMobilityModel")) {
+		UseMobilityModel = std::stoul(rootNode->first_node(
+				"UseMobilityModel")->value());
 	}
 	if (0 != rootNode->first_node("IsIsotropicNetwork")) {
 		IsIsotropicNetwork = (bool) std::stoul(rootNode->first_node(
@@ -135,6 +143,10 @@ void Settings::initializeParameters(string filename) {
 		UseTexture = (bool) std::stoul(
 				rootNode->first_node("UseTexture")->value());
 	}
+	if (0 != rootNode->first_node("MaxMisOrientation")) {
+			MaxMisOrientation = std::stoul(
+					rootNode->first_node("MaxMisOrientation")->value());
+		}
 	if (0 != rootNode->first_node("ExecuteInParallel")) {
 		ExecuteInParallel = (bool) std::stoul(rootNode->first_node(
 				"ExecuteInParallel")->value());
@@ -182,10 +194,8 @@ void Settings::initializeParameters(string filename) {
 		NeighbourTracking = std::stoul(rootNode->first_node("NeighbourTracking")->value());
 		}
 
-	if (0 != rootNode->first_node("DislocationEnergy")) {
-		DislocationEnergy = std::stoul(rootNode->first_node("DislocationEnergy")->value());
-			}
 	file.close();
+
 }
 
 #define PUSH_PARAM(param_name) 	\
@@ -218,9 +228,10 @@ xml_node<>* Settings::generateXMLParametersNode(xml_document<>* root,
 	PUSH_VALUE(ReadFromFilename, filename);
 	PUSH_PARAM(HAGB);
 	PUSH_PARAM(TriplePointDrag);
-	PUSH_PARAM(UseMobilityFactor);
+	PUSH_PARAM(UseMobilityModel);
 	PUSH_PARAM(IsIsotropicNetwork);
 	PUSH_PARAM(UseTexture);
+	PUSH_PARAM(MaxMisOrientation);
 	PUSH_PARAM(ExecuteInParallel);
 	PUSH_PARAM(MaximumNumberOfThreads);
 	PUSH_PARAM(GridCoarsement);
@@ -231,7 +242,6 @@ xml_node<>* Settings::generateXMLParametersNode(xml_document<>* root,
 	PUSH_PARAM(ConstantSectorRadius);
 	PUSH_PARAM(InterpolatingSectorRadius);
 	PUSH_PARAM(NeighbourTracking);
-	PUSH_PARAM(DislocationEnergy);
 	return params;
 }
 #undef PUSH_PARAM
