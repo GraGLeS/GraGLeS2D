@@ -11,3 +11,8 @@ An Advanced Level Set Approach to Grain Growth - Accounting for Grain Boundary A
 publication date: autumm 2015
 
 DOI information:	10.1016/j.actamat.2015.07.040.
+
+Acknowledgements:
+
+The authors gratefully acknowledge the support from the FZJuelich and the RWTH Aachen University for granting computing time within the frame of the JARAHPC project no 6687.
+
