@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Parameters>
    <StartTime> 0 </StartTime>
-   <NumberOfParticles> 50 </NumberOfParticles> 
-   <NumberOfPointsPerGrain> 30 </NumberOfPointsPerGrain>
-   <AnalysisTimestep> 5 </AnalysisTimestep>
+   <NumberOfParticles> 5000 </NumberOfParticles> 
+   <NumberOfPointsPerGrain> 10 </NumberOfPointsPerGrain>
+   <AnalysisTimestep> 20 </AnalysisTimestep>
    <NumberOfTimesteps> 1000 </NumberOfTimesteps>
-   <DiscreteSamplingRate> 25 </DiscreteSamplingRate>
+   <DiscreteSamplingRate> 31  </DiscreteSamplingRate>
    <DomainBorderSize> 7 </DomainBorderSize>
    <MicrostructureGenMode> 1 </MicrostructureGenMode>
    <!-- USAGE:
@@ -26,7 +26,7 @@
 	0 == off
     Input is 0 , 1 , 2,  3 as a boolean. Check source code for usage. 
    -->
-   <IsIsotropicNetwork> 1 </IsIsotropicNetwork>
+   <IsIsotropicNetwork> 0 </IsIsotropicNetwork>
     <!-- USAGE:
    	0	considers anisotropic grain boundary properties
    	1	ignores Texture, Energies and Mobilitys. all equal to one. Execution is much faster.
