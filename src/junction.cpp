@@ -70,9 +70,8 @@ double GrainJunction::getWeight(LSbox* me) {
 
 			//myNeighbor = me->m_grainBoundary.getDirectNeighbourCaracteristic(handler->getGrainByID(neighbours[1]));
 			//averageMobility += myNeighbor.mobility;
-
+			theta_mis = me->computeMisorientation(neighbours[1]);
 			averageMobility +=me->GBmobilityModel(theta_mis, handler->getGrainByID(neighbours[1]));
-
 			if (theta_mis > theta_ref)
 				gamma[2] = gamma_hagb;
 			else
