@@ -2,6 +2,11 @@
 
 Grain Growth Level Set 2dim (GraGLeS2D) is a software kit to simulate the grain growth phenoma as it occurs in polycrystalline materials. The software is designed to account for anisotropic grain boundaries and finite, in particular, low triple junction mobilities. The algorithm utilizes an OpenMP parallelization strategy and is optimized (and ongoing work) for ccNUMA archictecture. 
 
+An installation guide is provided here:
+
+http://gragles.readthedocs.org/en/latest/
+
+
 For detailed information, please read my Acta Materialia paper (private version attached to the git):
 
 Article title:	
