@@ -99,4 +99,4 @@ The project is licenced under the GNU v2.0
 Questions, contributions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just let me know or contact *markus.kuehbach@rwth-aachen.de*
+Just let me know or contact *miessen@imm.rwth-aachen.de*
