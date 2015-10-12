@@ -15,6 +15,11 @@
 	3	E_GENERATE_TESTCASE,
    -->
    <ReadFromFilename>lsInputQuadrat.dat</ReadFromFilename>
+   <LatticeType> 0 </LatticeType>
+   <!-- USAGE:
+       O               E_CUBIC,
+       1               E_HEXAGONAL
+   -->
    <HAGB> 1.0 </HAGB>
    <TriplePointDrag> 10000000.0 </TriplePointDrag>
     <!-- USAGE:
