@@ -54,11 +54,23 @@ The script will draw the evolution of the polycrystal by composing a .gif file.
 3. Topological Evolution
 ^^^^^^^^^^^^^^^^^^^^^^
 
-We also hand out a suited post analysis tools to depict the topological transformation of the evolution. See 
+We also provide a custom-tailored post analysis tool to trace the topological evolution of the network. See 
 
 https://github.com/mkuehbach/TopologyTracer
 
 for further details. 
+
+Example:
+
+.. figure:: ../images/SCubeBiFastestSlowest.jpg
+
+   :scale: 40%
+   :align: center
+   
+
+
+
+
 
 References
 ^^^^^^^^^^
