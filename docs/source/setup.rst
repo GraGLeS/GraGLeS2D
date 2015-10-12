@@ -9,8 +9,8 @@ How to install the GraGLeS2D application
 4. Open a console and go to the src directory 
 5. create a build folder: *cd build*
 6. go to the build directory and run cmake "cmake .."
-6. Compile the program with *make*
-7. Find happily the binary in *build*
-8. copy one of the example paramter files ( see params folder ) into the build folder
-9. run the apllication with "LevelSet_IMM paramters.xml" 
+7. Compile the program with *make*
+8. Find happily the binary in *build*
+9. copy one of the example paramter files ( see params folder ) into the build folder
+10. run the apllication with "LevelSet_IMM paramters.xml" 
 
