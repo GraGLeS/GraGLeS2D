@@ -6,8 +6,7 @@ An installation guide is provided here:
 
 http://gragles.readthedocs.org/en/latest/
 
-
-For detailed information, please read my Acta Materialia paper (private version attached to the git):
+For detailed information about the physics we refer to our Acta Materialia paper (private version attached to the git):
 
 Article title:	
 
