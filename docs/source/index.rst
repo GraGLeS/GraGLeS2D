@@ -88,7 +88,7 @@ For the post-analysis:
  | doi:10.1088/1757-899X/89/1/012031
  
 Funding:
- | The authors gratefully acknowledge the support from the DFG in the frame of the Reinhart Kosselleck project (GO 3356/44-1).
+ | The authors gratefully acknowledge the support from the DFG in the frame of the Reinhart Kosselleck project (GO 335/44-1).
  | Furthermore, we acknowledge the support from the FZJuelich and RWTH Aachen University within the project JARAHPC projects. 
  
  
