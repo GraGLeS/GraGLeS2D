@@ -50,7 +50,8 @@ The script will draw the evolution of the polycrystal by composing a gif file.
 "analysisstep" has to be a multiple of the "Analysisstep" defined in the parameters.xml.
 
 
-.. figure:: ../images/SCubeBiFastestSlowest.jpg
+.. figure:: ../images/SCubeBiProtrusions.jpg
+
    :scale: 40%
    :align: center
    
