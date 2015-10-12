@@ -2,7 +2,7 @@ GraGLeS2D is a OpenMP-parallelized computer program for simulating the evolution
 
   https://github.com/cmiessen/GraGLeS2D
 
-
+  https://github.com/GraGLeS/GraGLeS2D
 
 GraGLeS 2D grain growth data format
 ===================================
