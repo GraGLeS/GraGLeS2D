@@ -69,7 +69,7 @@ Specifically about GraGLeS:
  | Acta Materialia, 2015, 99
  | doi:10.1016/j.actamat.2015.07.040
  
-For the method itself:
+For the post-analysis:
  | Kuhbach M., Barrales-Mora L.A., Miessen C., Gottstein G.: 
  | **Ultrafast analysis of individual grain behavior during grain growth by parallel computing** 
  | Proceedings of the 36th Riso International Symposium on Materials Science 
