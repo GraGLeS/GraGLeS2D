@@ -43,8 +43,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'TopologyTracer'
-copyright = u'2015, Markus Kuehbach'
+project = u'GrainGrowthLevelSet'
+copyright = u'2015, Christian Miessen'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -196,8 +196,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'TopologyTracer.tex', u'TopologyTracer Documentation',
-   u'Markus Kuehbach', 'manual'),
+  ('index', 'GraGLeS.tex', u'GraGLeS Documentation',
+   u'Christian Miessen', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -226,8 +226,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'topologytracer', u'TopologyTracer Documentation',
-     [u'Markus Kuehbach'], 1)
+    ('index', 'GraGLeS', u'GraGLeS Documentation',
+     [u'Christian Miessen'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -240,8 +240,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'TopologyTracer', u'TopologyTracer Documentation',
-   u'Markus Kuehbach', 'TopologyTracer', 'One line description of project.',
+  ('index', 'GraGLeS', u'GraGLeS Documentation',
+   u'Christian Miessen', 'GraGLeS', 'One line description of project.',
    'Miscellaneous'),
 ]
 
