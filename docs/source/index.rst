@@ -19,11 +19,6 @@ The compilation of GraGLeS2D utilizes standard Linux tools.
    setup
    
 
-1. Installation Guide
-^^^^^^^^^^^^^^^^^
-
-
-
 
 2. Visualizing results
 ^^^^^^^^^^^^^^^^^^^^^^
