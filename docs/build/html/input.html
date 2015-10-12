@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GraGLeS 2D grain growth data format &mdash; TopologyTracer 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="TopologyTracer 0.1 documentation" href="index.html" />
+    <link rel="next" title="Compiling a growth history for individual grains" href="tracing.html" />
+    <link rel="prev" title="How to install TopologyTracer" href="setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tracing.html" title="Compiling a growth history for individual grains"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="How to install TopologyTracer"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">TopologyTracer 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <p>GraGLeS2D is a OpenMP-parallelized computer program for simulating the evolution of anisotropic grain growth phenomena in polycrystal that makes use of the level-set method. It is free to download from:</p>
+<div class="highlight-python"><div class="highlight"><pre>https://github.com/cmiessen/GraGLeS2D
+</pre></div>
+</div>
+<div class="section" id="gragles-2d-grain-growth-data-format">
+<h1>GraGLeS 2D grain growth data format<a class="headerlink" href="#gragles-2d-grain-growth-data-format" title="Permalink to this headline">¶</a></h1>
+<p>For each time step at which a snapshot of the entire microstructure was taken, by default GraGLeS2D writes a plain ASCII file with the following syntax <strong>Texture_&lt;no&gt;.txt</strong>,
+where <strong>&lt;no&gt;</strong> is positiv and refers to the simulation step ID at which the snapshot was taken.</p>
+<p>Thus, a collection of <em>N</em> snapshots contains all pieces of information to extract the temporal trajectory of individual grains.
+Each such file, which is headerless and space-separated, contains always all still existent grains in the network, their properties and their neighbors.
+Specifically, the file layout reads as follows:</p>
+<ul class="simple">
+<li><strong>Identification ID</strong> - a positive grain label</li>
+<li><strong>Number of faces</strong> - how many neighbors does the grain possess</li>
+<li><strong>BoundaryFlag</strong> - is the grain located in contact with the simulation domain boundary (1 - yes, 0 - no)</li>
+<li><strong>Area</strong> - size normalized to the size (1.0) of the unit square simulation domain</li>
+<li><strong>AreaChange</strong> - size difference compared to previous time step</li>
+<li><strong>Perimeter</strong> - circumference</li>
+<li><strong>TotalBoundaryEnergy</strong> - face length times energy for each face</li>
+<li><strong>OrientationBunge1</strong> - Bunge convention Euler angle phi_1</li>
+<li><strong>OrientationBunge2</strong> - Bunge convention Euler angle PHI</li>
+<li><strong>OrientationBunge3</strong> - Bunge convention Euler angle phi_2</li>
+<li><strong>ID FaceLength</strong> - a list of exactly <em>Number of faces</em> data pairs indicating all neighbors with their ID and the length of the adjointing face</li>
+</ul>
+<p>An example file is included in the <em>example/</em> folder.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="setup.html"
+                        title="previous chapter">How to install TopologyTracer</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tracing.html"
+                        title="next chapter">Compiling a growth history for individual grains</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/input.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tracing.html" title="Compiling a growth history for individual grains"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="How to install TopologyTracer"
+             >previous</a> |</li>
+        <li><a href="index.html">TopologyTracer 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Markus Kuehbach.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

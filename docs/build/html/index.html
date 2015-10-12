@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Getting started &mdash; TopologyTracer 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="TopologyTracer 0.1 documentation" href="#" />
+    <link rel="next" title="How to install TopologyTracer" href="setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="setup.html" title="How to install TopologyTracer"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">TopologyTracer 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <p>TopologyTracer is a postprocessing tool for the identification of structural changes in the topology, the properties of grains, and their neighbors from grain growth simulation data conducted in synthetic polycrystals.
+The source is developed by Markus Kuhbach at the Institute of Physical Metallurgy and Metal Physics.</p>
+<blockquote>
+<div><div class="figure align-center">
+<a class="reference internal image-reference" href="_images/IMMLogo.png"><img alt="_images/IMMLogo.png" src="_images/IMMLogo.png" style="width: 584.0px; height: 133.5px;" /></a>
+</div>
+</div></blockquote>
+<div class="section" id="getting-started">
+<h1>1. Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>The compilation of TopologyTracer utilizes standard Linux tools.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">How to install TopologyTracer</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="creating-input">
+<h1>2. Creating input<a class="headerlink" href="#creating-input" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><div class="figure align-center">
+<a class="reference internal image-reference" href="_images/SCubeBiProtrusions.jpg"><img alt="_images/SCubeBiProtrusions.jpg" src="_images/SCubeBiProtrusions.jpg" style="width: 409.6px; height: 322.8px;" /></a>
+</div>
+</div></blockquote>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="simulate.html">How to simulate input</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input.html">GraGLeS 2D grain growth data format</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="tracing-grains">
+<h1>3. Tracing grains<a class="headerlink" href="#tracing-grains" title="Permalink to this headline">¶</a></h1>
+<p>By default it is assumed that the executable is placed in the same folder as the raw data. Then, <strong>tracing</strong>, i.e. the process of postprocessing time-resolved data with TopologyTracer is invoked with the following command line call:</p>
+<div class="highlight-python"><div class="highlight"><pre>mpiexec -n &lt;proc&gt; topologytracer &lt;1&gt; &lt;2&gt; &lt;3&gt; &lt;4&gt; &lt;5&gt; &lt;6&gt;
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>In its current version the following six input arguments are necessary:</dt>
+<dd><div class="first last line-block">
+<div class="line">&lt;proc&gt; <strong>HowManyProcesses</strong></div>
+<div class="line">&lt;1&gt; <strong>JobID</strong> a positive integer to distinguish the simulation output from other data</div>
+<div class="line">&lt;2&gt; <strong>N0</strong> the number of grains found in total in the earliest time step. It is assumed that upon grain growth the number of grains shrinks.</div>
+<div class="line">&lt;3&gt; <strong>&lt;First&gt;</strong> ID of the first snapshot that should be considered, positive integer</div>
+<div class="line">&lt;4&gt; <strong>&lt;Offset&gt;</strong> how many simulation steps are the snapshots apart, positive integer</div>
+<div class="line">&lt;5&gt; <strong>&lt;Last&gt;</strong> ID of the last snapshot that should be considered, positive integer</div>
+<div class="line">&lt;6&gt; <strong>&lt;MemoryPerProcess&gt;</strong> how much physical memory is guaranteed to be safely written to per process, in MB</div>
+</div>
+</dd>
+</dl>
+<p>During reading GraGLeS2D input data the TopologyTracer automatically determines the file size to plan how many snapshots that are consecutive in simulation time can be loaded into a single process. This improves data locality.
+However this requires a smart choice of the &lt;6&gt;. Imaging for instance 1000 snapshots of 50 GB in total now if 10 nodes are commissioned each given &lt;6&gt; as 10 GB, the first node is going to collect as many snapshot data until it filled its 10 GB, consequently only probably 5 nodes become work, while the others idle.
+On the other hand the number of process should not exceed the number of physical devices onto which the snapshot are stored as this would quickly congest physically the media servers.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Compiling a growth history for individual grains</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="visualizing-results">
+<h1>4. Visualizing results<a class="headerlink" href="#visualizing-results" title="Permalink to this headline">¶</a></h1>
+<p>In its current state the TopologyTracer does not contain a GUI yet. Instead, plain MPI I/O raw files are being generated and postprocessed with the MATLAB scripts available in the <em>scripts</em> folder.</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="_images/SCubeBiFastestSlowest.jpg"><img alt="_images/SCubeBiFastestSlowest.jpg" src="_images/SCubeBiFastestSlowest.jpg" style="width: 409.6px; height: 307.2px;" /></a>
+</div>
+</div>
+<div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>For the method itself:</dt>
+<dd><div class="first last line-block">
+<div class="line">Kuhbach M., Barrales-Mora L.A., Miessen C., Gottstein G.:</div>
+<div class="line"><strong>Ultrafast analysis of individual grain behavior during grain growth by parallel computing</strong></div>
+<div class="line">Proceedings of the 36th Riso International Symposium on Materials Science</div>
+<div class="line">doi:10.1088/1757-899X/89/1/012031</div>
+</div>
+</dd>
+<dt>Specifically about GraGLeS:</dt>
+<dd><div class="first last line-block">
+<div class="line">Miessen C., Liesenjohann M., Barrales-Mora L.A., Shvindlerman L.S., Gottstein G.</div>
+<div class="line">An advanced level set approach to grain growth – Accounting for grain boundary anisotropy and finite triple junction mobility</div>
+<div class="line">Acta Materialia, 2015, 99</div>
+<div class="line">doi:10.1016/j.actamat.2015.07.040</div>
+</div>
+</dd>
+<dt>Funding:</dt>
+<dd><div class="first last line-block">
+<div class="line">The authors gratefully acknowledge the support from the DFG in the frame of the Reinhart Kosselleck project (GO 3356/44-1).</div>
+<div class="line">Furthermore, we acknowledge the support from the FZJuelich and RWTH Aachen University within the project JARAHPC projects.</div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="version-history">
+<h1>Version history<a class="headerlink" href="#version-history" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><div class="line-block">
+<div class="line"><strong>v0.1</strong> first set of functionalities to obtain temporal trajectories in topology/mobility/energy phase space, simple neighbor correlations and disorientation</div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="licence">
+<h1>Licence<a class="headerlink" href="#licence" title="Permalink to this headline">¶</a></h1>
+<p>The project is licenced under the GNU v2.0</p>
+</div>
+<div class="section" id="questions-contributions">
+<h1>Questions, contributions<a class="headerlink" href="#questions-contributions" title="Permalink to this headline">¶</a></h1>
+<p>Just let me know or contact <em>markus.kuehbach&#64;rwth-aachen.de</em></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1. Getting started</a></li>
+<li><a class="reference internal" href="#creating-input">2. Creating input</a></li>
+<li><a class="reference internal" href="#tracing-grains">3. Tracing grains</a></li>
+<li><a class="reference internal" href="#visualizing-results">4. Visualizing results</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+<li><a class="reference internal" href="#version-history">Version history</a></li>
+<li><a class="reference internal" href="#licence">Licence</a></li>
+<li><a class="reference internal" href="#questions-contributions">Questions, contributions</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="setup.html"
+                        title="next chapter">How to install TopologyTracer</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="setup.html" title="How to install TopologyTracer"
+             >next</a> |</li>
+        <li><a href="#">TopologyTracer 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Markus Kuehbach.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
