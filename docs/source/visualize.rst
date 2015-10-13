@@ -1,3 +1,7 @@
+How to visualize the grains or even the evolution
+=============================
+
+
 We provide a number of shell scripts to visualize the output. You basically need gnuplot to run these postprocessing scripts:
 
 1. plotNetworkAtTime.sh
