@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 
-project(LevelSet_IMM C CXX)
+project(GraGLeS_2D C CXX)
 
 set(CMAKE_BUILD_DIR "build")
 
