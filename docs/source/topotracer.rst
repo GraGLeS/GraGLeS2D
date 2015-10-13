@@ -1,4 +1,4 @@
-A tailored tracer to visualize the topological evolution
+A tailor-made analysis tool to trace and visualize the topological evolution of a polycrystal
 =============================
 
 
