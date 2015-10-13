@@ -52,9 +52,9 @@ ADD_DEFINITIONS("-DUSE_FFTW")
 #ADD_DEFINITIONS("-DUSE_MKL")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "-mkl -DMKL_ILP64")
 
-add_executable(LevelSet_IMM ${MY_SOURCES})
+add_executable(GraGLeS_2D ${MY_SOURCES})
 
-target_link_libraries(LevelSet_IMM ${MPI_LIBRARIES}  ${VORO++_LIBRARIES} 
+target_link_libraries(GraGLeS_2D ${MPI_LIBRARIES}  ${VORO++_LIBRARIES} 
 ${Boost_LIBRARIES} -lfftw3 -lfftw3f -lm )
 
 
