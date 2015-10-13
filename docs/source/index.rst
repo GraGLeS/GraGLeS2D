@@ -23,49 +23,20 @@ The compilation of GraGLeS2D utilizes standard Linux tools.
 2. Visualizing results
 ^^^^^^^^^^^^^^^^^^^^^^
 
-We provide a number of shell scripts to visualize the output. You basically need gnuplot to run these postprocessing scripts:
-
-1. plotNetworkAtTime.sh
-
-execute: sh plotNetworkAtTime.sh 'timestep'
-
-The script will draw the polycrystal at time "timestep". 
-"timestep" has to be a multiple of the "Analysisstep" defined in the parameters.xml.
-
-This is a possible result:
-
-.. figure:: ../images/SCubeBiProtrusions.jpg
-
-   :scale: 40%
-   :align: center
+.. toctree::
+   :maxdepth: 2
+     
+   visualize
    
-
-The colors of the GB describe teh charcater of the GB (mobility times energy). 
-
-2. produceAnimation_aux.sh
-
-execute: sh plotNetworkAtTime.sh 'analysisstep'
-
-The script will draw the evolution of the polycrystal by composing a .gif file. 
-"analysisstep" has to be a multiple of the "Analysisstep" defined in the parameters.xml.
-
 
 
 3. Topological Evolution
 ^^^^^^^^^^^^^^^^^^^^^^
 
-We also provide a custom-tailored post analysis tool to trace the topological evolution of the network. See 
-
-https://github.com/mkuehbach/TopologyTracer
-
-for further details. 
-
-Example:
-
-.. figure:: ../images/SCubeBiFastestSlowest.jpg
-
-   :scale: 40%
-   :align: center
+.. toctree::
+   :maxdepth: 2
+     
+   topotracer
    
 
 
