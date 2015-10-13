@@ -12,5 +12,5 @@ How to install the GraGLeS2D application
 7. Compile the program with *make*
 8. Find happily the binary in *build*
 9. copy one of the example paramter files ( see params folder ) into the build folder
-10. run the apllication with "LevelSet_IMM paramters.xml" 
+10. run the apllication with "GraGLeS_2D parameters.xml" 
 
