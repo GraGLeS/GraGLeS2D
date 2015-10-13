@@ -1,4 +1,4 @@
-How to visualize the grains or even the evolution
+How to visualize the grains and their evolution
 =============================
 
 
