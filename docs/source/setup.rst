@@ -7,7 +7,7 @@ How to install the GraGLeS2D application
 2. Pull the project from the git repository https://github.com/GraGLeS/GraGLeS2D
 3. Check your compiler. Both the Intel compiler (v14.0 or newer) and the GNU compiler can be utilized
 4. Open a console and go to the src directory 
-5. create a build folder: *cd build*
+5. create a build folder: *mkdir build*
 6. go to the build directory and run cmake "cmake .."
 7. download the library: https://github.com/jemalloc
 8. ./configure the library and copy the libjemalloc.so and libjemalloc.so.2 files to your source directory
