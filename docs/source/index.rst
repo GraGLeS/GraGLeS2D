@@ -1,7 +1,8 @@
-.. Documentation to the GraGLeS 2d Project
+.. Documentation to the GraGLeS 2D Project
 .. ===================================
 
-The Grain Growth Level Set simulation tool is a 2D evolution solver for arbitrary tesselations. The evolution can be discribed by a gradient flow - in the shown apllication we implemented a weighted mean curvature flow. This models the well-known physical phenomena of grain growth in polycrystalline materials. The GraGLes project is developed by Christian Mießen and Nikola Velinov at the Institute of Physical Metallurgy and Metal Physics.
+The Grain Growth Level Set simulation tool is a 2D evolution solver for arbitrary tesselations. The evolution is computed by a gradient flow - in the shown apllication we implemented a weighted mean curvature flow. This models the well-known physical phenomena of grain growth in polycrystalline materials. The GraGLes project is developed by Christian Mießen and Nikola Velinov at the Institute of Physical Metallurgy and Metal Physics.
+As we utilize a special allocator library (jemalloc), please follow the installation instrcutions in the next chapter.
 
  .. figure:: ../images/IMMLogo.png
    :scale: 50%
