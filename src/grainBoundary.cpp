@@ -87,14 +87,12 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 	double line_length;
 	double h = m_owningGrain->get_h();
 	double thetaMis = 0;
-	double theta_ref = 15.0 * PI / 180.0;
-	double gamma_hagb = Settings::HAGB;
 	vector<characteristics>::iterator it;
 
 	m_directNeighbourhoodTimestep = timestep;
 	m_directNeighbourhood.clear();
 
-	for (unsigned int i = 0; i < m_grainBoundary.size() -1; i++) {
+	for (unsigned int i = 0; i < m_grainBoundary.size() - 1; i++) {
 		double px = m_grainBoundary[i].x;
 		double py = m_grainBoundary[i].y;
 		int pxGrid = int(px);
@@ -119,49 +117,61 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 			m_owningGrain->markAsInvalidMotion();
 			return;
 		}
-		if (Settings::IsIsotropicNetwork == 0 && (Settings::ResearchMode != 1)) {
-			thetaMis = m_owningGrain->computeMisorientation(candidate);
-			if (thetaMis < 1 * PI / 180)
-				thetaMis = 1 * PI / 180;
-			if (thetaMis <= theta_ref) {
-				m_grainBoundary[i].energy = gamma_hagb * (thetaMis / theta_ref)
-						* (1.0 - log(thetaMis / theta_ref));
-			} else
-				m_grainBoundary[i].energy = gamma_hagb;
-
-			m_grainBoundary[i].mob = m_owningGrain->GBmobilityModel(thetaMis, candidate);
-
-			if (m_grainBoundary[i].energy != m_grainBoundary[i].energy) {
-				cout << m_owningGrain->getID() << "nan in Energy computation "
-						<< endl;
-				m_grainBoundary[i].energy = 0.01;
-			}
-		}
-		else if (Settings::ResearchMode == 1) {
-			if (Settings::MicrostructureGenMode == E_GENERATE_TESTCASE) {
-				m_grainBoundary[i].energy
-						= m_owningGrain->getWeigthFromHandler(
-								m_owningGrain->getID(), candidate->getID());
-				m_grainBoundary[i].mob = 1.0;
-			}
-
-			else if (Settings::ResearchProject != 0) {
-				m_grainBoundary[i].energy = 1.0;
-				m_grainBoundary[i].mob = 1.0;
-			} else {
-				thetaMis = m_owningGrain->computeMisorientation(candidate);
-				theta_ref = 42 * PI / 180;
-				if (thetaMis <= theta_ref)
-					m_grainBoundary[i].energy = 0.3;
-				else
-					m_grainBoundary[i].energy = gamma_hagb;
-				m_grainBoundary[i].mob = 1.0;
-			}
-		}
-		else if (Settings::IsIsotropicNetwork) {
-					m_grainBoundary[i].energy = 1.0;
-					m_grainBoundary[i].mob = 1.0;
-		}
+		//		if (Settings::IsIsotropicNetwork == 0 && (Settings::ResearchMode != 1)) {
+		//			thetaMis = m_owningGrain->computeMisorientation(candidate);
+		//			m_grainBoundary[i].mob = m_owningGrain->GBmobilityModel(thetaMis,
+		//					candidate);
+		//			if (thetaMis <= theta_ref) {
+		//				if (thetaMis < 1 * PI / 180)
+		//					thetaMis = 1 * PI / 180;
+		//			}
+		//			m_grainBoundary[i].energy = m_owningGrain->GBEnergyReadShockley(
+		//					thetaMis);
+		//			if (Settings::IdentifyTwins)
+		//				if (m_owningGrain->MisoriToTwinBoundary(candidate) < 8.66025
+		//						* PI / 180.0) {
+		//					//if the GB is TWIN Boundary set the Energy to the lowest one allowed : theta_mis = 1 degree
+		//					m_grainBoundary[i].energy
+		//							= m_owningGrain->GBEnergyReadShockley(1 * PI / 180);
+		//				}
+		//			//check for nan:
+		//			if (m_grainBoundary[i].energy != m_grainBoundary[i].energy) {
+		//				cout << m_owningGrain->getID() << "nan in Energy computation "
+		//						<< endl;
+		//				m_grainBoundary[i].energy = 0.01;
+		//			}
+		//
+		//		} else if (Settings::ResearchMode == 1) {
+		//			if (Settings::MicrostructureGenMode == E_GENERATE_TESTCASE) {
+		//				m_grainBoundary[i].energy
+		//						= m_owningGrain->getWeigthFromHandler(
+		//								m_owningGrain->getID(), candidate->getID());
+		//				m_grainBoundary[i].mob = 1.0;
+		//			}
+		//
+		//			else if (Settings::ResearchProject != 0) {
+		//				m_grainBoundary[i].energy = 1.0;
+		//				m_grainBoundary[i].mob = 1.0;
+		//			} else {
+		//				thetaMis = m_owningGrain->computeMisorientation(candidate);
+		//				theta_ref = 42 * PI / 180;
+		//				if (thetaMis <= theta_ref)
+		//					m_grainBoundary[i].energy = 0.3;
+		//				else
+		//					m_grainBoundary[i].energy = gamma_hagb;
+		//				m_grainBoundary[i].mob = 1.0;
+		//			}
+		//		} else if (Settings::IsIsotropicNetwork) {
+		//			m_grainBoundary[i].energy = 1.0;
+		//			m_grainBoundary[i].mob = 1.0;
+		//		}
+		thetaMis = m_owningGrain->computeMisorientation(candidate);
+		double StoredElasticEnergy = candidate->get_StoredElasticEnergy();
+		double magneticEnergy = candidate->get_magneticEnergy();
+		m_grainBoundary[i].mob = m_owningGrain->GBmobilityModel(thetaMis,
+				candidate);
+		m_grainBoundary[i].energy = m_owningGrain->GBEnergyReadShockley(
+				thetaMis, candidate);
 		line_length = (m_grainBoundary[i] - m_grainBoundary[i + 1]).len();
 		line_length *= h;
 
@@ -175,7 +185,8 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 		if (it == m_directNeighbourhood.end()) {
 			m_directNeighbourhood.push_back(
 					characteristics(candidate, 0, m_grainBoundary[i].energy,
-							thetaMis, m_grainBoundary[i].mob));
+							thetaMis, m_grainBoundary[i].mob,
+							StoredElasticEnergy,magneticEnergy));
 			it = m_directNeighbourhood.end();
 			it--;
 		}
@@ -183,8 +194,7 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 	}
 	m_grainBoundary[m_grainBoundary.size() - 1].energy
 			= m_grainBoundary[0].energy;
-	m_grainBoundary[m_grainBoundary.size() - 1].mob
-				= m_grainBoundary[0].mob;
+	m_grainBoundary[m_grainBoundary.size() - 1].mob = m_grainBoundary[0].mob;
 }
 
 double ExplicitGrainBoundary::computeVolume(int timestep, bool verbose) {
@@ -352,30 +362,159 @@ int ExplicitGrainBoundary::projectToGrainBondary(SPoint point,
 		double& out_lambda) const {
 	double minDist = 1000000.0;
 	int minimal_segment = 0;
-	for (unsigned int k = 1, l = 0; k < m_grainBoundary.size(); k++, l++) {
-		SPoint u = m_grainBoundary[k] - m_grainBoundary[l];
-		double lambda = (point - m_grainBoundary[l]).dot(u);
-		lambda /= u.dot(u);
-
-		double dist;
-		if (lambda < 0)
-			dist = (point - m_grainBoundary[l]).len();
-		else if (lambda > 1)
-			dist = (m_grainBoundary[k] - point).len();
-		else
-			dist = (point - (m_grainBoundary[l] + u * lambda)).len();
-
+	// first search on vertices:
+	double dist = 0;
+	int asize = m_grainBoundary.size();
+	int nearestPoint = -1;
+	for (int k = 0; k < asize - 1; k++) { //check p_1 .. p_N, skip last entry which is again p_1
+		SPoint u = m_grainBoundary[k];
+		dist = (point - u).lenSqr();
 		if (dist < minDist) {
-			minimal_segment = l;
+			nearestPoint = k;
 			minDist = dist;
-			out_lambda = lambda;
-			if (out_lambda > 1)
-				out_lambda = 1;
-			if (out_lambda < 0)
-				out_lambda = 0;
+			minimal_segment = k;
 		}
 	}
+	// start local search on adjacent line segments - here the order plays an important role, as the vertex is the next point on the inface to point
+	minDist = 1000000.0;
+	int next = nearestPoint + 1;
+	SPoint u = m_grainBoundary[next] - m_grainBoundary[nearestPoint];
+	double lambda = (point - m_grainBoundary[nearestPoint]).dot(u);
+	lambda /= u.dot(u);
+	if (lambda < 0)
+		dist = (point - m_grainBoundary[nearestPoint]).lenSqr();
+	else if (lambda > 1)
+		dist = (m_grainBoundary[next] - point).lenSqr();
+	else
+		dist = (point - (m_grainBoundary[nearestPoint] + u * lambda)).lenSqr();
+	if (dist < minDist) {
+		minimal_segment = nearestPoint;
+		minDist = dist;
+		out_lambda = lambda;
+	}
+	// m_grainboundary {p_1,p_2,..,p_N, p_1}
+	if (nearestPoint == 0)
+		nearestPoint = asize - 1;
+
+	int previous = nearestPoint - 1;
+	u = m_grainBoundary[nearestPoint] - m_grainBoundary[previous];
+	lambda = (point - m_grainBoundary[previous]).dot(u);
+	lambda /= u.dot(u);
+	if (lambda < 0)
+		dist = (point - m_grainBoundary[previous]).lenSqr();
+	else if (lambda > 1)
+		dist = (m_grainBoundary[nearestPoint] - point).lenSqr();
+	else
+		dist = (point - (m_grainBoundary[previous] + u * lambda)).lenSqr();
+	if (dist < minDist) {
+		minimal_segment = previous;
+		minDist = dist;
+		out_lambda = lambda;
+	}
+
+	if (out_lambda > 1)
+		out_lambda = 1;
+	if (out_lambda < 0)
+		out_lambda = 0;
+
+	// original algorithm:
+	//	for (unsigned int k = 1, l = 0; k < m_grainBoundary.size(); k++, l++) {
+	//		SPoint u = m_grainBoundary[k] - m_grainBoundary[l];
+	//		double lambda = (point - m_grainBoundary[l]).dot(u);
+	//		lambda /= u.dot(u);
+	//		if (lambda < 0)
+	//			dist = (point - m_grainBoundary[l]).lenSqr();
+	//		else if (lambda > 1)
+	//			dist = (m_grainBoundary[k] - point).lenSqr();
+	//		else
+	//			dist = (point - (m_grainBoundary[l] + u * lambda)).lenSqr();
+	//
+	//		if (dist < minDist) {
+	//			minimal_segment = l;
+	//			minDist = dist;
+	//			out_lambda = lambda;
+	//			if (out_lambda > 1)
+	//				out_lambda = 1;
+	//			if (out_lambda < 0)
+	//				out_lambda = 0;
+	//		}
+	//	}
 	return minimal_segment;
+}
+
+double ExplicitGrainBoundary::DistanceToGrainBondary(SPoint point) const {
+	double minDist = 1000000.0;
+	int minimal_segment = 0;
+	// first search on vertices:
+	double dist = 0;
+	int asize = m_grainBoundary.size();
+	int nearestPoint = -1;
+	for (int k = 0; k < asize - 1; k++) { //check p_1 .. p_N, skip last entry which is again p_1
+		SPoint u = m_grainBoundary[k];
+		dist = (point - u).lenSqr();
+		if (dist < minDist) {
+			nearestPoint = k;
+			minDist = dist;
+			minimal_segment = k;
+		}
+	}
+	// start local search on adjacent line segments - here the order plays an important role, as the vertex is the next point on the inface to point
+	minDist = 1000000.0;
+	int next = nearestPoint + 1;
+	SPoint u = m_grainBoundary[next] - m_grainBoundary[nearestPoint];
+	double lambda = (point - m_grainBoundary[nearestPoint]).dot(u);
+	lambda /= u.dot(u);
+	if (lambda < 0)
+		dist = (point - m_grainBoundary[nearestPoint]).lenSqr();
+	else if (lambda > 1)
+		dist = (m_grainBoundary[next] - point).lenSqr();
+	else
+		dist = (point - (m_grainBoundary[nearestPoint] + u * lambda)).lenSqr();
+	if (dist < minDist) {
+		minimal_segment = nearestPoint;
+		minDist = dist;
+	}
+	// m_grainboundary {p_1,p_2,..,p_N, p_1}
+	if (nearestPoint == 0)
+		nearestPoint = asize - 1;
+
+	int previous = nearestPoint - 1;
+	u = m_grainBoundary[nearestPoint] - m_grainBoundary[previous];
+	lambda = (point - m_grainBoundary[previous]).dot(u);
+	lambda /= u.dot(u);
+	if (lambda < 0)
+		dist = (point - m_grainBoundary[previous]).lenSqr();
+	else if (lambda > 1)
+		dist = (m_grainBoundary[nearestPoint] - point).lenSqr();
+	else
+		dist = (point - (m_grainBoundary[previous] + u * lambda)).lenSqr();
+	if (dist < minDist) {
+		minimal_segment = previous;
+		minDist = dist;
+	}
+	// original algorithm:
+	//	for (unsigned int k = 1, l = 0; k < m_grainBoundary.size(); k++, l++) {
+	//		SPoint u = m_grainBoundary[k] - m_grainBoundary[l];
+	//		double lambda = (point - m_grainBoundary[l]).dot(u);
+	//		lambda /= u.dot(u);
+	//		if (lambda < 0)
+	//			dist = (point - m_grainBoundary[l]).lenSqr();
+	//		else if (lambda > 1)
+	//			dist = (m_grainBoundary[k] - point).lenSqr();
+	//		else
+	//			dist = (point - (m_grainBoundary[l] + u * lambda)).lenSqr();
+	//
+	//		if (dist < minDist) {
+	//			minimal_segment = l;
+	//			minDist = dist;
+	//			out_lambda = lambda;
+	//			if (out_lambda > 1)
+	//				out_lambda = 1;
+	//			if (out_lambda < 0)
+	//				out_lambda = 0;
+	//		}
+	//	}
+	return minDist;
 }
 
 void ExplicitGrainBoundary::setPointsOnBoundary(ContourSector& sector) {
@@ -459,6 +598,26 @@ bool ExplicitGrainBoundary::isBoxDirectNeighbour(LSbox* neighbour) {
 			return true;
 	}
 	return false;
+}
+double ExplicitGrainBoundary::get_f_StoredElasticEnergy(int neighbor) {
+	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
+		if (m_directNeighbourhood[i].directNeighbour->getID() == neighbor)
+			return (m_owningGrain->get_StoredElasticEnergy()
+					- m_directNeighbourhood[i].StoredElasticEnergy)
+					* m_directNeighbourhood[i].mobility;
+	}
+}
+double ExplicitGrainBoundary::getMobility(int neighbor) {
+	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
+		if (m_directNeighbourhood[i].directNeighbour->getID() == neighbor)
+			return m_directNeighbourhood[i].mobility;
+	}
+}
+double ExplicitGrainBoundary::get_f_magneticEnergy(int neighbor) {
+	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
+		if (m_directNeighbourhood[i].directNeighbour->getID() == neighbor)
+			return ((m_owningGrain->get_magneticEnergy() -m_directNeighbourhood[i].magneticEnergy) *m_directNeighbourhood[i].mobility);
+	}
 }
 
 SPoint ExplicitGrainBoundary::calculateCentroid() {

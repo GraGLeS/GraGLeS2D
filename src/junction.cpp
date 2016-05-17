@@ -37,71 +37,95 @@ double GrainJunction::getWeight(LSbox* me) {
 	double averageMobility = 0;
 	double sigma;
 	double gamma[3] = { 0.0, 0.0, 0.0 };
-	double gamma_hagb = Settings::HAGB;
+	double gamma_hagb = 1.0;
 	double theta_ref = 15.0 * PI / 180;
 	double theta_mis;
 
 	if (Settings::MicrostructureGenMode == E_GENERATE_WITH_VORONOY
-			|| Settings::MicrostructureGenMode == E_READ_FROM_FILE) {
+			|| Settings::MicrostructureGenMode == E_READ_FROM_FILE
+			|| Settings::MicrostructureGenMode
+					== E_READ_VOXELIZED_MICROSTRUCTURE) {
 
-		if (Settings::ResearchMode != 1) {
+		if (Settings::ResearchMode == 0) {
 
 			theta_mis = me->computeMisorientation(neighbours[0]);
 			//characteristics& myNeighbor = me->m_grainBoundary.getDirectNeighbourCaracteristic(handler->getGrainByID(neighbours[0]));
 			//averageMobility += myNeighbor.mobility;
-			averageMobility +=me->GBmobilityModel(theta_mis, handler->getGrainByID(neighbours[0]));
-
-			if (theta_mis > theta_ref)
-				gamma[0] = gamma_hagb;
-			else
-				gamma[0] = gamma_hagb * (theta_mis / theta_ref) * (1.0 - log(
-						theta_mis / theta_ref));
+			averageMobility += me->GBmobilityModel(theta_mis,
+					handler->getGrainByID(neighbours[0]));
+			gamma[0] = me->GBEnergyReadShockley(theta_mis,
+					handler->getGrainByID(neighbours[0]));
+			if (Settings::IdentifyTwins)
+				if (me->MisoriToTwinBoundary(
+						handler->getGrainByID(neighbours[0])) < 8.66025 * PI
+						/ 180.0) {
+					//if the GB is TWIN Boundary set the Energy to the lowest one allowed : theta_mis = 1 degree
+					gamma[0] = me->GBEnergyReadShockley(1 * PI / 180,
+							handler->getGrainByID(neighbours[0]));
+				}
 
 			theta_mis
 					= handler->getGrainByID(neighbours[0])->computeMisorientation(
 							neighbours[1]);
-			characteristics& myNeighbor = handler->getGrainByID(neighbours[0])->m_grainBoundary.getDirectNeighbourCaracteristic(handler->getGrainByID(neighbours[1]));
+			characteristics
+					& myNeighbor =
+							handler->getGrainByID(neighbours[0])->m_grainBoundary.getDirectNeighbourCaracteristic(
+									handler->getGrainByID(neighbours[1]));
 			averageMobility += myNeighbor.mobility;
-			if (theta_mis > theta_ref)
-				gamma[1] = gamma_hagb;
-			else
-				gamma[1] = gamma_hagb * (theta_mis / theta_ref) * (1.0 - log(
-						theta_mis / theta_ref));
+			gamma[1]
+					= handler->getGrainByID(neighbours[0])->GBEnergyReadShockley(
+							theta_mis, handler->getGrainByID(neighbours[1]));
+			if (Settings::IdentifyTwins)
+				if (handler->getGrainByID(neighbours[0])->MisoriToTwinBoundary(
+						handler->getGrainByID(neighbours[1])) < 8.66025 * PI
+						/ 180.0) {
+					//if the GB is TWIN Boundary set the Energy to the lowest one allowed : theta_mis = 1 degree
+					gamma[1]
+							= handler->getGrainByID(neighbours[0])->GBEnergyReadShockley(
+									1 * PI / 180,
+									handler->getGrainByID(neighbours[1]));
+				}
 
 			//myNeighbor = me->m_grainBoundary.getDirectNeighbourCaracteristic(handler->getGrainByID(neighbours[1]));
 			//averageMobility += myNeighbor.mobility;
+
 			theta_mis = me->computeMisorientation(neighbours[1]);
-			averageMobility +=me->GBmobilityModel(theta_mis, handler->getGrainByID(neighbours[1]));
-			if (theta_mis > theta_ref)
-				gamma[2] = gamma_hagb;
-			else
-				gamma[2] = gamma_hagb * (theta_mis / theta_ref) * (1.0 - log(
-						theta_mis / theta_ref));
+			averageMobility += me->GBmobilityModel(theta_mis,
+					handler->getGrainByID(neighbours[1]));
+			gamma[2] = me->GBEnergyReadShockley(theta_mis,
+					handler->getGrainByID(neighbours[1]));
+			if (Settings::IdentifyTwins)
+				if (me->MisoriToTwinBoundary(
+						handler->getGrainByID(neighbours[1])) < 8.66025 * PI
+						/ 180.0) {
+					//if the GB is TWIN Boundary set the Energy to the lowest one allowed : theta_mis = 1 degree
+					gamma[2] = me->GBEnergyReadShockley(1 * PI / 180,
+							handler->getGrainByID(neighbours[1]));
+				}
 
 		} else if (Settings::ResearchMode == 1) {
-			gamma[0] = 1.0;
-			gamma[1] = 1.0;
-			gamma[2] = 1.0;
-		}
+			if (handler->project == E_TRIPLE_JUNCTION_DRAG_SINGLE) {
+				if (coordinates.x < handler->delta + 2
+						+ handler->get_grid_blowup() || coordinates.x
+						> handler->get_ngridpoints()
+								- handler->get_grid_blowup() - 2
+						|| coordinates.y < handler->delta + 2
+								+ handler->get_grid_blowup() || coordinates.y
+						> handler->get_ngridpoints()
+								- handler->get_grid_blowup() - 2) {
+					//return 1.0;
+					//cout << "Corner in 4er" << endl;
 
-	}
+					return 0.0;
 
-	else if (Settings::MicrostructureGenMode == E_READ_VERTEX) {
-		gamma[0] = handler->ST[(me->getID() - 1) + (handler->get_ngrains()
-				* (neighbours[0] - 1))];
-		gamma[1] = handler->ST[(neighbours[0] - 1) + (handler->get_ngrains()
-				* (neighbours[1] - 1))];
-		gamma[2] = handler->ST[(me->getID() - 1) + (handler->get_ngrains()
-				* (neighbours[1] - 1))];
-
-		if (Settings::ResearchMode == 1) {
-
-			if (handler->project == E_TRIPLE_JUNCTION_DRAG_NETWORK) {
-
+				}
+			} else {
 				gamma[0] = 1.0;
 				gamma[1] = 1.0;
 				gamma[2] = 1.0;
-			} else {
+			}
+		} else if (Settings::ResearchMode == 2) {
+			{
 
 				//! Generates for one half of the GBs a high angle
 				//! and for the other half a low angle GB energy
@@ -137,6 +161,9 @@ double GrainJunction::getWeight(LSbox* me) {
 		gamma[2] = handler->weightsMatrix[me->getID()][neighbours[1]];
 
 		//		cout << gamma[0] << " ++ " << gamma[1] << " ++ " << gamma[2] << endl;
+	} else {
+		cout << "error in junction.cpp - no rule found" << endl;
+		exit(2);
 	}
 
 	// find the asociated weight

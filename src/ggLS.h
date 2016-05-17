@@ -57,6 +57,7 @@
 #include "SCORE_Random.h"
 #include "dimensionalBuffer.h"
 #include "marchingSquares.h"
+#include "Quaternion.h"
 
 
 

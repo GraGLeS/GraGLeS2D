@@ -16,19 +16,26 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#ifndef _mymath_h_
-#define _mymath_h_
+#ifndef _MYMATH_H_
+#define _MYMATH_H_
 
 #include <stdlib.h>
 #include <math.h>
 #include "SCORE_Random.h"
 #include <stdint.h>
+#include "Quaternion.h"
 //#include <vector>
 
+
+#define PI 3.14159265358979323846
 #define QUAT2EUL_ETA 	1e-20
 #define RGBRANGE 		255
+#define SWAP(A, B) {struct tempStruct { char C[sizeof(A)];} swap_tmp;\
+    swap_tmp = *( struct tempStruct*) &A;\
+    *( struct tempStruct*) &A = *( struct tempStruct*) &B;\
+    *( struct tempStruct*) &B = swap_tmp;}
 
-class randomClass;
+
 typedef double Real;
 
 struct Point{
@@ -64,13 +71,10 @@ public:
 	void K_S_Test( double * data1, unsigned long n1, double * data2, unsigned long n2, double * d, double * prob );
 	double probks( double alam );
 	
-	
-	//quaternion algebra
 	void multiplyQuaternions( double *q, double* p, double* r );
 	void multiplyQuaternions2( double *q, double* p, double* r ); //this function is what has been implemented in COReV2
-	double distanceBetweenQuaternions( double * q, double * p );
-	
-	
+
+
 	//convert orientations among parametrizations, such as Bunge (3,1,3) rotation convention and quaternion
 	void euler2quaternion( double * euler, double * q );
 	void quaternion2Euler( const double * quat, double * euler );
@@ -78,7 +82,7 @@ public:
 	
 	//calculate disorientation among two orientations in various parametrizations
 	double misorientationCubic( double pa1, double Pa, double pa2, double pb1, double Pb, double pb2 );
-	void misorientationQuaternionCubic( double* p, double* q, double* quat  );
+	Quaternion* misorientationQuaternionCubic( double* p, double* q);
 	double misorientationCubicQxQ( double q01, double q11, double q21, double q31, double q02, double q12, double q22, double q32 );
 	
 	

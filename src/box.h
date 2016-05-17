@@ -31,11 +31,9 @@
 #include "charasteristic.h"
 #include "RTree.h"
 
-
 #ifdef USE_MKL
 #include "mkl_dfti.h"
 #endif
-
 
 using namespace std;
 
@@ -44,7 +42,8 @@ class grainhdl;
 class DimensionalBufferReal;
 class MarchingSquaresAlgorithm;
 class Settings;
-
+class Quaternion;
+class ExplicitGrainBoundary;
 struct SPoint;
 /*!
  * \struct VolEvolution
@@ -83,7 +82,7 @@ private:
 	bool m_intersectsBoundaryGrain;
 	DimensionalBufferIDLocal m_IDLocal;
 	double m_meanDa;
-	double* m_orientationQuat;
+	Quaternion* m_orientationQuat;
 	double m_volume;
 	double m_energy;
 	double m_perimeter;
@@ -91,18 +90,22 @@ private:
 	int m_newXMax;
 	int m_newYMin;
 	int m_newYMax;
+	double m_StoredElasticEnergy;
+	double m_magneticEnergy;
 	SPoint m_centroid;
 	vector<SPoint> m_regressionPoints;
 	vector<SPoint> m_triangleCetroid;
 	MinimalisticBoundary m_minimalBoundary;
 	DimensionalBufferReal* m_inputDistance;
-	DimensionalBufferReal* m_outputDistance;fftwp_plan m_backwardsPlan;fftwp_plan
-			m_forwardPlan;
+	DimensionalBufferReal* m_outputDistance;
+
 	vector<LSbox*> m_comparisonList;
 	vector<LSbox*> m_secondOrderNeighbours;
 
-
-#ifdef USE_MKL
+#ifdef USE_FFTW
+	fftwp_plan m_backwardsPlan;
+	fftwp_plan m_forwardPlan;
+#elif USE_MKL
 	DFTI_DESCRIPTOR_HANDLE m_handle;
 	DFTI_DESCRIPTOR_HANDLE m_b_handle;
 	MKL_LONG m_dimensions[2];
@@ -116,15 +119,18 @@ protected:
 public:
 	//Constructors to document
 	LSbox(int id, double phi1, double PHI, double phi2, grainhdl* owner);
-	LSbox(int id, int nvertex, double* vertices, double q1, double q2,
+	LSbox(int id, const vector<SPoint>& vertices, double q1, double q2,
 			double q3, double q4, grainhdl* owner);
 	LSbox(int aID, vector<SPoint>& contour, grainhdl* owner);
 	LSbox(int id, int nvertex, double* vertices, double phi1, double PHI,
 			double phi2, grainhdl* owner);
+	LSbox(int id, const vector<SPoint>& vertices, Quaternion ori,
+			double StoredElasticEnergy, grainhdl* owner);
 	//Dtors
 	~LSbox();
 	void calculateDistanceFunction();
 	void executeRedistancing();
+	void executeExactRedist();
 	void extractContour();
 	void markAsInvalidMotion();
 	inline bool isMotionRegular() const {
@@ -151,6 +157,7 @@ public:
 	int getDirectNeighbourCount() {
 		return m_grainBoundary.getDirectNeighboursCount();
 	}
+	void marchingSquares(DimensionalBufferReal* which);
 	vector<int> getDirectNeighbourIDs();
 	vector<double> getGBLengths();
 	map<int, double>& getlocalMODF() {
@@ -161,10 +168,12 @@ public:
 	void executeConvolution(ExpandingVector<char>& mem_pool);
 	void reizeIDLocalToDistanceBuffer();
 	void recalculateIDLocal();
+	void setIDLocal(int ID);
 
 	//Debug printing functions
 	void plot_box_contour(int timestep = -1, bool plot_energy = false,
-			ofstream* dest_file = NULL, bool absCoordinates = false);
+			ofstream* dest_file = NULL, bool absCoordinates = false,
+			int threadID = 0);
 	void plot_full_grain(int timestep = -1, bool plot_energy = false,
 			ofstream* dest_file = NULL, bool absCoordinates = false);
 	void plot_box_parameters(ofstream* dest_file = NULL);
@@ -209,6 +218,8 @@ public:
 			vector<SPoint> triangle);
 	void calculateCentroid(SPoint& centroid, vector<GrainJunction> junctions);
 
+	double MisoriToTwinBoundary(LSbox* candidate);
+	double GBEnergyReadShockley(double theta, LSbox* candidate);
 	double get_h();
 
 	void outputMemoryUsage(ofstream& output);
@@ -252,11 +263,17 @@ public:
 	inline double getMeanA() const {
 		return m_grainBoundary.getMeanA();
 	}
-	inline const double* getOrientationQuat() {
+	inline const Quaternion* getOrientationQuat() {
 		return m_orientationQuat;
 	}
 	inline const vector<SPoint>& getRegressionPoints() const {
 		return m_regressionPoints;
+	}
+	inline double get_StoredElasticEnergy() {
+		return m_StoredElasticEnergy;
+	}
+	inline double get_magneticEnergy() {
+		return m_magneticEnergy;
 	}
 	LSbox* getNeighbourAt(int i, int j);
 };

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Parameters>
+	<StartTime> 0 </StartTime>
+   <NumberOfParticles> 5828 </NumberOfParticles> 
+   <NumberOfPointsPerGrain> 20 </NumberOfPointsPerGrain>
+   <AnalysisTimestep> 10 </AnalysisTimestep>
+   <PlotInterval> 1 </PlotInterval>
+   <!-- in every x-th Analysisstep the full structure is plotted -> very memory intense -->
+   <NumberOfTimesteps> 5000 </NumberOfTimesteps>
+   <BreakupNumber>50</BreakupNumber>
+   <DiscreteSamplingRate> 31 </DiscreteSamplingRate>
+   <DomainBorderSize> 10 </DomainBorderSize>
+   <MicrostructureGenMode> 0 </MicrostructureGenMode>
+   <!-- USAGE:
+   		O		E_READ_FROM_FILE,
+			1		E_GENERATE_WITH_VORONOY,
+			2		E_READ_VERTEX, // The edges need to be ordered
+			3		E_GENERATE_TESTCASE,
+			4		E_READ_VOXELIZED_MICROSTRUCTURE
+   -->
+   <ReadFromFilename>Ti_mod.txt</ReadFromFilename>
+   <AdditionalFilename>SyntheticStructure1.uds</AdditionalFilename>
+   <LatticeType>0</LatticeType>
+	   <!-- USAGE:
+	   	O		E_CUBIC,
+		1		E_HEXAGONAL	
+	   -->
+   <HAGB_Energy>0.3</HAGB_Energy>
+   <!--unit: Js/m2 -->
+   <HAGB_Mobility>3.e-11</HAGB_Mobility>
+   <!--unit: m4/Js -->
+   <Physical_Domain_Size>2.9e-3</Physical_Domain_Size>   
+   <!--unit: meter -->
+   <DislocEnPerM> 8.81e-10 </DislocEnPerM>
+   <!--1/2 Gbb - material constant -->
+   <TriplePointDrag>1.e10</TriplePointDrag>
+     <!-- USAGE:
+    	0.0		off
+    	Input is a number larger than 0. This number is the absolute mobility of the point. 10.000 is quite large
+   -->
+   <UseMobilityModel>0</UseMobilityModel>
+   <!-- USAGE:
+    Input is 0 or 1 as a boolean. For 1 a mobility model is applied. 
+   -->
+   <IdentifyTwins> 0 </IdentifyTwins>
+   <!-- USAGE:
+    Input is 0 or 1 as a boolean. For 1 a Sigma 3 GB are identified and considered as lowest angle GB. 
+   -->
+   <UseStoredElasticEnergy>0</UseStoredElasticEnergy>
+   <UseMagneticField>1</UseMagneticField>
+   <MagneticParams>MagneticField.xml</MagneticParams>
+   <!-- Filename for magnetic field paramters-->
+   <IsIsotropicNetwork> 0 </IsIsotropicNetwork>
+   <UseTexture> 1 </UseTexture>
+   <!-- USAGE:
+				1 for simulate fibre texture, 0 for random
+   -->
+   <MaxMisOrientation> 25 </MaxMisOrientation>
+   <!-- USAGE:
+				If UseTexture == 1, Orientations are sampled by randomly misorienting from a fixed ori with a maximum angle. 
+   -->
+   
+   <ExecuteInParallel> 1 </ExecuteInParallel>
+   <MaximumNumberOfThreads> 8 </MaximumNumberOfThreads>
+   <GridCoarsement> 0 </GridCoarsement>
+   <GridCoarsementGradient> 0.98 </GridCoarsementGradient> 
+   <ConvolutionMode>2</ConvolutionMode>   
+   <!-- USAGE:
+   	O		E_LAPLACE,
+		1		E_LAPLACE_RITCHARDSON,
+		2		E_GAUSSIAN,
+   -->
+   <ResearchMode>0</ResearchMode>
+
+		<!-- USAGE:
+   	0 	Energies defined by misorientation
+		1	  Energies clambed to 0.3 or 0.6  - use Texture == false			
+   -->
+   <ResearchProject>0</ResearchProject>
+		<!-- USAGE:
+		0	E_NO_PROJECT
+   	1 E_TRIPLE_JUNCTION_DRAG_SINGLE
+		2	E_TRIPLE_JUNCTION_DRAG_NETWORK	
+   -->
+   <ConstantSectorRadius>3</ConstantSectorRadius>
+   <InterpolatingSectorRadius>2</InterpolatingSectorRadius>
+   <NeighbourTracking>0</NeighbourTracking>
+   <GrainScheduler>1</GrainScheduler>
+   <!-- USAGE:
+        0       E_ITERATIVE
+        1       E_SQUARES
+   -->
+   <DecoupleGrains>1</DecoupleGrains>
+      	<!-- USAGE:
+	     			0	  DEFAULT
+   		1   skips comparison and let grains shring isolated
+   -->
+
+</Parameters>

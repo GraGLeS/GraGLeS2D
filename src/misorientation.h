@@ -4,6 +4,7 @@
 #include<math.h>
 #include<assert.h>
 #include<iostream>
+#include"mymath.h"
 
 
 
@@ -22,6 +23,7 @@ typedef long fileRef;
 class Misori;
 class orientation;
 class MisorientationHdl;
+class Quaternion;
 
 typedef MisorientationHdl misHdl;
 typedef misHdl* misHdlP;
@@ -54,6 +56,8 @@ struct misOriAngleAxis{
         int l;
 };
 
+
+
 class MisorientationHdl{
         public:
                 MisoriP firstMisAll;
@@ -80,6 +84,8 @@ class MisorientationHdl{
                 int readData( char *filename, int *XCells, int *YCells );
                 void determineGrainBoundaries( int N, int XCells, int YCells );
                 void createIndexMatrixBravais( void );
+                double calculateMisorientation_hexagonal(Quaternion* pp,
+                		Quaternion* qq);
                 double calculateMisorientation_hexagonal( double* p , double* q );
                 void calculateMisorientation( Ori oria, Ori orib, MisoriP mis );
                 void determineAngleAxis(Real *quaternion, MisoriP misori);

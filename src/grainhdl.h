@@ -25,6 +25,8 @@
 #include "Settings.h"
 #include <omp.h>
 #include "misorientation.h"
+#include "IGrainScheduler.h"
+#include "dimensionalBuffer.h"
 
 
 #define xsect(p1,p2) (h[p2]*xh[p1]-h[p1]*xh[p2])/(h[p2]-h[p1])
@@ -38,6 +40,8 @@ using namespace std;
 class LSbox;
 class mathMethods;
 
+class Quaternion;
+
 /*!
  * \class grainhdl
  * \brief Class that manages the grain growth simulation.
@@ -47,15 +51,16 @@ protected:
 	int ngrains;
 	double dt;
 	double h;
-
+	double m_Energy_deltaMAX;
 	int realDomainSize;
 	int ngridpoints;
 	int grid_blowup;
 
 	int Mode;
+	IGrainScheduler* m_grainScheduler;
 
 public:
-	int currentNrGrains;
+	unsigned int currentNrGrains;
 	mathMethods* mymath;
 	unsigned int loop;
 	//! control variable for research mode
@@ -75,16 +80,18 @@ public:
 	vector<vector<double> > weightsMatrix;
 
 	double ds;
-	double tubeRadius;
 	double *ST;
 	double *part_pos;
 	double delta;
 	double *bunge;
 	double deviation;
 	double BoundaryGrainTube;
-	double simulationTime;
+	double Realtime;
+	double TimeSlope;
 	double maxVol;
 	MisorientationHdl* m_misOriHdl;
+	Quaternion *TwinBoundary;
+	DimensionalBuffer<int>* IDField;
 
 	vector<LSbox*> grains;
 	LSbox* boundary;
@@ -95,11 +102,13 @@ public:
 	void setResearchAdjustments();
 	void setResearchAdjustments(E_RESEARCH_PROJECT project);
 	void setSimulationParameter();
+	void read_HeaderCPG();
 
 	void VOROMicrostructure();
 	void readMicrostructureFromVertex();
 	void readMicrostructure();
-	void saveMicrostructure();
+	void save_Full_Microstructure_for_Restart();
+	void read_voxelized_microstructure();
 
 	void createParamsForSim(const char* param_filename,
 			const char* vertex_dum_filename = NULL);
@@ -112,22 +121,24 @@ public:
 	void destroyConvolutionPlans();
 	void save_conv_step();
 	void comparison_box();
+	void tweakIDLocal();
 
 	void updateSecondOrderNeighbors();
 	void level_set();
 	void redistancing();
 
 	virtual void run_sim();
-	void save_sim();
+	void save_NrGrainsStats();
 	void clear_mem();
-	void save_texture();
+	void save_Texture();
 	void save_id();
 	void save_regLine();
+	void save_Memory_Print();
 	void plot_contour();
 	void gridCoarsement();
 
 	void saveAllContourLines();
-	void saveAllContourEnergies();
+	void save_NetworkPlot();
 	void switchDistancebuffer();
 
 	void saveSpecialContourEnergies(int id);
@@ -139,7 +150,7 @@ public:
 	//! Used if points are set manually
 	int read_ScenarioPoints();
 	void get_biggestGrainVol();
-
+	void find_correctTimestepSize();
 	inline LSbox* getGrainByID(unsigned int ID)
 	{
 		if (ID == 0) return boundary;
@@ -181,7 +192,10 @@ public:
 
 protected:
 	void initEnvironment();
+	void initNUMABindings();
 	void buildBoxVectors(vector<vector<SPoint>>& contours);
+	void buildBoxVectors(vector<vector<SPoint>>& contours, double* q1, double* q2, double* q3, double* q4);
+	void buildBoxVectors(int* ID, vector<vector<SPoint>>& contours, Quaternion* Quaternionen,double* StoredElasticEnergy);
 	int m_ThreadPoolCount;
 	vector<ExpandingVector<char> > m_ThreadMemPool;
 };

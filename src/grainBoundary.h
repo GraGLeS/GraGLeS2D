@@ -63,14 +63,20 @@ public:
 	vector<double>              	getGbSegmentLength();
 	inline int	getBoundarySegmentCount() { return m_grainBoundary.size(); }
 	inline int  getDirectNeighboursCount() { return m_directNeighbourhood.size(); }
-	inline void addDirectNeighbourManual( LSbox* neighbour ) { m_directNeighbourhood.push_back(characteristics(neighbour, 0, 0, 0)); }
+	inline void addDirectNeighbourManual( LSbox* neighbour ) { m_directNeighbourhood.push_back(characteristics(neighbour, 0, 0, 0,0)); }
 	characteristics& getDirectNeighbourCaracteristic(LSbox* neighbour);
 	map<int, double>& getlocalMODF();
 	bool isBoxDirectNeighbour(LSbox* neighbour);
 	SPoint calculateCentroid();
+	double get_f_StoredElasticEnergy(int neighbor);
+	double get_f_magneticEnergy(int neighbor);
+	double getMobility(int neighbor);
+	SPoint get_GB_Element(int i){return m_grainBoundary[i];};
+	double DistanceToGrainBondary(SPoint point) const;
 private:
 
 	int projectToGrainBondary(SPoint point, double& out_lambda) const;
+
 	void setPointsOnBoundary(ContourSector& sector);
 	void calculateDiscreteEnergyDistribution();
 

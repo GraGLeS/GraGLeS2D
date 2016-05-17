@@ -116,6 +116,171 @@ int MisorientationHdl::readData(char *filename, int *XCells, int *YCells) {
 
 	return N;
 }
+
+
+double MisorientationHdl::calculateMisorientation_hexagonal(Quaternion* pp,
+		Quaternion* qq) {
+
+	/*double p1 = oria.p1*_PI_/180;   double p12 = orib.p1*_PI_/180;     //Degrees
+	 double t = oria.P*_PI_/180;     double t2 = orib.P*_PI_/180;
+	 double p2 = oria.p2*_PI_/180;   double p22 = orib.p2*_PI_/180;*/
+
+	// Quaternions from Euler angles
+	//double p[4] = {co1*cos((p1+p2)/2),s1*cos((p1-p2)/2),s1*sin((p1-p2)/2),co1*sin((p1+p2)/2)};
+	//double q[4] = {co2*cos((p12+p22)/2),s2*cos((p12-p22)/2),s2*sin((p12-p22)/2),co2*sin((p12+p22)/2)};
+
+	double q[4] = {qq->get_q0(), qq->get_q1(), qq->get_q2(), qq->get_q3()};
+	double p[4] = {pp->get_q0(), pp->get_q1(), pp->get_q2(), pp->get_q3()};
+
+	double qm1[4]; //Inverse of quaternion q
+
+	for (int i = 0; i < 4; i++)
+		qm1[i] = q[i];
+
+	qm1[0] *= -1; //Inverting unit quaternion; yes the inverse of a unit quaternion is a simple operation
+
+	double r[4]; //Resulting quaternion, rotation of the two previous quaternions pq-1
+
+	r[0] = p[0] * qm1[0] - p[1] * qm1[1] - p[2] * qm1[2] - p[3] * qm1[3];
+	r[1] = p[1] * qm1[0] + p[0] * qm1[1] - p[2] * qm1[3] + p[3] * qm1[2];
+	r[2] = p[2] * qm1[0] + p[0] * qm1[2] - p[3] * qm1[1] + p[1] * qm1[3];
+	r[3] = p[3] * qm1[0] + p[0] * qm1[3] - p[1] * qm1[2] + p[2] * qm1[1];
+
+	//Now, we have to determine the smallest angle.
+
+	double r0[6][2]; //There are 12 possible angles
+
+	double a, b, c, d;
+	double rt3 = sqrt(3.0);
+
+	a = r[0];
+	b = r[1];
+	c = r[2];
+	d = r[3];
+
+	r0[0][0] = a;
+	r0[0][1] = d;
+	r0[1][0] = b;
+	r0[1][1] = c;
+	r0[2][0] = 0.5 * (a + rt3 * d);
+	r0[2][1] = 0.5 * (d - rt3 * a);
+	r0[3][0] = 0.5 * (b - rt3 * c);
+	r0[3][1] = 0.5 * (c + rt3 * b);
+	r0[4][0] = 0.5 * (a - rt3 * d);
+	r0[4][1] = 0.5 * (d + rt3 * a);
+	r0[5][0] = 0.5 * (b + rt3 * c);
+	r0[5][1] = 0.5 * (c - rt3 * b);
+
+	double omega = 0.0;
+
+	int gp = -1; //General position
+	int sp = -1; //specific position
+
+	// The component with the maximal value is determined
+	for (int i = 0; i < 6; i++)
+		for (int j = 0; j < 2; j++)
+			if (fabs(r0[i][j]) > omega) {
+				omega = fabs(r0[i][j]);
+				gp = i;
+				sp = j;
+			}
+
+	if (gp < 0 || sp < 0 || gp > 5 || sp > 1) {
+		printf("Couldn't find the misorientation angle\n");
+	}
+
+	double eqq[6][4];
+
+	// Once this component is known, it is possible to determine the 6 possible quaternions which
+	// corresponds to the Disorientation
+
+	int ip = gp + 1;
+	int iq = gp + 3;
+	int ir = gp + 5;
+	int isp; //inverse specific position
+
+	if (sp == 0)
+		isp = 1;
+	else
+		isp = 0;
+	if (ip >= 6)
+		ip -= 6;
+	if (iq >= 6)
+		iq -= 6;
+	if (ir >= 6)
+		ir -= 6;
+
+	//These quaternions are here defined.
+
+	eqq[0][0] = r0[gp][sp];
+	eqq[0][1] = r0[ip][0];
+	eqq[0][2] = r0[ip][1];
+	eqq[0][3] = r0[gp][isp];
+	eqq[1][0] = r0[gp][sp];
+	eqq[1][1] = r0[ip][1];
+	eqq[1][2] = r0[ip][0];
+	eqq[1][3] = r0[gp][isp];
+	eqq[2][0] = r0[gp][sp];
+	eqq[2][1] = r0[iq][0];
+	eqq[2][2] = r0[iq][1];
+	eqq[2][3] = r0[gp][isp];
+	eqq[3][0] = r0[gp][sp];
+	eqq[3][1] = r0[iq][1];
+	eqq[3][2] = r0[iq][0];
+	eqq[3][3] = r0[gp][isp];
+	eqq[4][0] = r0[gp][sp];
+	eqq[4][1] = r0[ir][0];
+	eqq[4][2] = r0[ir][1];
+	eqq[4][3] = r0[gp][isp];
+	eqq[5][0] = r0[gp][sp];
+	eqq[5][1] = r0[ir][1];
+	eqq[5][2] = r0[ir][0];
+	eqq[5][3] = r0[gp][isp];
+
+	int isst = -1; //index of the quaternion in the standard stereographic triangle
+
+	for (int i = 0; i <= 5; i++) {
+		// The quaternion in the SST must meet these requirements.
+		a = fabs(eqq[i][0]);
+		b = fabs(eqq[i][1]);
+		c = fabs(eqq[i][2]);
+		d = fabs(eqq[i][3]);
+		if (a >= b && b >= rt3 * c && rt3 * c >= 0 && a >= 0.5 * (rt3 * b + c)
+				&& a >= (2 + rt3) * d && (2 + rt3) * d >= 0) {
+			int ib, id;
+
+			ib = sp;
+			if (i % 2)
+				id = 1;
+			else
+				id = 0;
+
+			if (ib == id)
+				isst = i; //The angle is determined by comparison with a Databank of Indices
+		}
+	}
+
+	Misori nmis;
+
+	if (isst < 0) {
+		//printf("Couldn't find an axis in the SST, exiting program\n");
+		//restart=0;
+		//break;
+
+		//Maybe useful for debugging. In the actual programm if a desorientation cannot be calculated
+		//it is set to 0 and therefore ignored
+
+	} else {
+		//MisoriP nmis = new Misori( 0,0,0,0,0 );
+		determineAngleAxis(eqq[isst], &nmis);
+	}
+
+	//std::cout << "misorientation: " << nmis.theta << "\n";
+
+	return nmis.theta;
+
+}
+
 double MisorientationHdl::calculateMisorientation_hexagonal(double* p,
 		double* q) {
 
