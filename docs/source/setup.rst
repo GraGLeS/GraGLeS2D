@@ -9,8 +9,11 @@ How to install the GraGLeS2D application
 4. Open a console and go to the src directory 
 5. create a build folder: *cd build*
 6. go to the build directory and run cmake "cmake .."
-7. Compile the program with *make*
-8. Find happily the binary in *build*
-9. copy one of the example paramter files ( see params folder ) into the build folder
-10. run the apllication with "GraGLeS_2D parameters.xml" 
+7. download the library: https://github.com/jemalloc
+8. ./configure the library and copy the libjemalloc.so and libjemalloc.so.2 files to your source directory
+
+9. Compile the program with *make*
+10. Find happily the binary in *build*
+11. copy one of the example paramter files ( see params folder ) into the build folder
+12. run the apllication with "GraGLeS_2D parameters.xml" 
 
