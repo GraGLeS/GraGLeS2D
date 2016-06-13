@@ -486,8 +486,11 @@ void grainhdl::VOROMicrostructure() {
 		realDomainSize -= 1;
 
 	voronoicell_neighbor c;
-	container con(0, 1, 0, 1, 0, 1, 5, 5, 5, randbedingung, randbedingung,
-			randbedingung, 2);
+	int blocks = (int)(pow((Settings::NumberOfParticles / 8), (1 / 3.)) + 1);
+	if (blocks < 1)
+		blocks = 1;
+	container con(0, 1, 0, 1, 0, 1, blocks, blocks, blocks, randbedingung, randbedingung,
+			randbedingung, 8);
 	c_loop_all vl(con);
 
 	//!
