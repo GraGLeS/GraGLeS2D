@@ -75,6 +75,10 @@ double Settings::MagneticForceField = 0.0;
 double Settings::A_Value = 0.0;
 double Settings::C_Value = 0.0;
 
+double Settings::GaussianKernelUserDefTimeSlope = 0.8359; //###E_GAUSSIAN DEFAULT TIMESLOPE
+double Settings::BoxDefaultStoredElasticEnergy = 0.0;
+unsigned long Settings::UserDefNumberOfPointsPerGrain = 0;
+
 
 
 void Settings::initializeParameters(string filename) {
@@ -115,6 +119,7 @@ void Settings::initializeParameters(string filename) {
 		NumberOfPointsPerGrain = std::stoul(
 				rootNode->first_node("NumberOfPointsPerGrain")->value());
 	}
+	UserDefNumberOfPointsPerGrain = NumberOfPointsPerGrain;
 	if (0 != rootNode->first_node("AnalysisTimestep")) {
 		AnalysisTimestep = std::stoul(
 				rootNode->first_node("AnalysisTimestep")->value());
@@ -265,6 +270,18 @@ void Settings::initializeParameters(string filename) {
 		DecoupleGrains = (bool) std::stoul(
 				rootNode->first_node("DecoupleGrains")->value());
 	}
+
+
+	if (0 != rootNode->first_node("GaussianKernelUserDefTimeSlope")) {
+		GaussianKernelUserDefTimeSlope = std::stod(rootNode->first_node("GaussianKernelUserDefTimeSlope")->value());
+	}
+	if (0 != rootNode->first_node("BoxDefaultStoredElasticEnergy")) {
+		BoxDefaultStoredElasticEnergy = std::stod(rootNode->first_node("BoxDefaultStoredElasticEnergy")->value());
+	}
+	if (0 != rootNode->first_node("UserDefNumberOfPointsPerGrain")) {
+		UserDefNumberOfPointsPerGrain = std::stoul(rootNode->first_node("UserDefNumberOfPointsPerGrain")->value());
+	}
+
 	file.close();
 
 	if (UseMagneticField == 1)
@@ -324,6 +341,8 @@ void Settings::readMagneticFieldParams(string filename) {
 	if (0 != rootNode->first_node("A_Value")) {
 		A_Value = std::stod(rootNode->first_node("A_Value")->value());
 	}
+
+
 	file.close();
 }
 

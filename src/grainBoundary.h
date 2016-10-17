@@ -31,6 +31,8 @@
 using namespace std;
 
 class LSbox;
+struct Face;
+struct TextureData;
 
 /*!
  * \class ExplicitGrainBoundary
@@ -73,6 +75,8 @@ public:
 	double getMobility(int neighbor);
 	SPoint get_GB_Element(int i){return m_grainBoundary[i];};
 	double DistanceToGrainBondary(SPoint point) const;
+
+	vector<Face>* getFaces();
 private:
 
 	int projectToGrainBondary(SPoint point, double& out_lambda) const;

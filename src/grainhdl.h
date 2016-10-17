@@ -1,20 +1,20 @@
 /*
-	GraGLeS 2D A grain growth simulation utilizing level set approaches
-    Copyright (C) 2015  Christian Miessen, Nikola Velinov
+ GraGLeS 2D A grain growth simulation utilizing level set approaches
+ Copyright (C) 2015  Christian Miessen, Nikola Velinov
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef GRAINHDL_h
 #define GRAINHDL_h
@@ -27,7 +27,6 @@
 #include "misorientation.h"
 #include "IGrainScheduler.h"
 #include "dimensionalBuffer.h"
-
 
 #define xsect(p1,p2) (h[p2]*xh[p1]-h[p1]*xh[p2])/(h[p2]-h[p1])
 #define ysect(p1,p2) (h[p2]*yh[p1]-h[p1]*yh[p2])/(h[p2]-h[p1])
@@ -151,12 +150,13 @@ public:
 	int read_ScenarioPoints();
 	void get_biggestGrainVol();
 	void find_correctTimestepSize();
-	inline LSbox* getGrainByID(unsigned int ID)
-	{
-		if (ID == 0) return boundary;
-		else if(ID > 0 && ID < grains.size())
+	inline LSbox* getGrainByID(unsigned int ID) {
+		if (ID == 0)
+			return boundary;
+		else if (ID > 0 && ID < grains.size())
 			return grains[ID];
-		else return NULL;
+		else
+			return NULL;
 	}
 
 	inline long get_ngrains() {
@@ -184,9 +184,9 @@ public:
 		return BoundaryGrainTube;
 	}
 	inline double get_ds() {
-			return ds;
-		}
-	inline double get_maxVol(){
+		return ds;
+	}
+	inline double get_maxVol() {
 		return maxVol;
 	}
 
@@ -194,8 +194,10 @@ protected:
 	void initEnvironment();
 	void initNUMABindings();
 	void buildBoxVectors(vector<vector<SPoint>>& contours);
-	void buildBoxVectors(vector<vector<SPoint>>& contours, double* q1, double* q2, double* q3, double* q4);
-	void buildBoxVectors(int* ID, vector<vector<SPoint>>& contours, Quaternion* Quaternionen,double* StoredElasticEnergy);
+	void buildBoxVectors(vector<vector<SPoint>>& contours, vector<double>& q1,
+			vector<double>& q2, vector<double>& q3, vector<double>& q4);
+	void buildBoxVectors(int* ID, vector<vector<SPoint>>& contours,
+			Quaternion* Quaternionen, double* StoredElasticEnergy);
 	int m_ThreadPoolCount;
 	vector<ExpandingVector<char> > m_ThreadMemPool;
 };

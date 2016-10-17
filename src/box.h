@@ -30,6 +30,7 @@
 #include "grainBoundary.h"
 #include "charasteristic.h"
 #include "RTree.h"
+#include "Quaternion.h"
 
 #ifdef USE_MKL
 #include "mkl_dfti.h"
@@ -49,14 +50,6 @@ struct SPoint;
  * \struct VolEvolution
  * \brief This structure stores the evolution of area and the corresponding number of vertices.
  */
-struct VolEvolution {
-	double dA;
-	int nVertex;
-
-	VolEvolution(double da, int nr) :
-		dA(da), nVertex(nr) {
-	}
-};
 
 /*!
  * \class LSbox
@@ -154,9 +147,7 @@ public:
 	double getWeigthFromHandler(int i, int j);
 	void constructBoundarySectors();
 	double getWeight(int i, int j, bool minimal = false);
-	int getDirectNeighbourCount() {
-		return m_grainBoundary.getDirectNeighboursCount();
-	}
+
 	void marchingSquares(DimensionalBufferReal* which);
 	vector<int> getDirectNeighbourIDs();
 	vector<double> getGBLengths();
@@ -164,7 +155,6 @@ public:
 		return m_grainBoundary.getlocalMODF();
 	}
 	bool checkIntersection(LSbox* box2);
-
 	void executeConvolution(ExpandingVector<char>& mem_pool);
 	void reizeIDLocalToDistanceBuffer();
 	void recalculateIDLocal();
@@ -223,7 +213,14 @@ public:
 	double get_h();
 
 	void outputMemoryUsage(ofstream& output);
+	TextureData collectTextureData();
 
+	inline vector<Face>* get_Faces(){
+		return m_grainBoundary.getFaces();
+	}
+	inline int getDirectNeighbourCount() {
+		return m_grainBoundary.getDirectNeighboursCount();
+	}
 	inline bool grainExists() const {
 		return m_exists;
 	}

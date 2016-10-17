@@ -22,11 +22,12 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include "Structs.h"
 
 #define PERIODIC(x) (((x) + (m_grainBoundary.size()-1)) % (m_grainBoundary.size() -1 ))
 
 ExplicitGrainBoundary::ExplicitGrainBoundary(LSbox* owner) :
-	m_owningGrain(owner) {
+		m_owningGrain(owner) {
 }
 
 ExplicitGrainBoundary::~ExplicitGrainBoundary() {
@@ -177,8 +178,8 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 
 		//  save length in GrainCharaczeristics
 
-		for (it = m_directNeighbourhood.begin(); it
-				!= m_directNeighbourhood.end(); it++) {
+		for (it = m_directNeighbourhood.begin();
+				it != m_directNeighbourhood.end(); it++) {
 			if (candidate == (*it).directNeighbour)
 				break;
 		}
@@ -186,14 +187,14 @@ void ExplicitGrainBoundary::buildDirectNeighbours(
 			m_directNeighbourhood.push_back(
 					characteristics(candidate, 0, m_grainBoundary[i].energy,
 							thetaMis, m_grainBoundary[i].mob,
-							StoredElasticEnergy,magneticEnergy));
+							StoredElasticEnergy, magneticEnergy));
 			it = m_directNeighbourhood.end();
 			it--;
 		}
 		it->length += line_length;
 	}
-	m_grainBoundary[m_grainBoundary.size() - 1].energy
-			= m_grainBoundary[0].energy;
+	m_grainBoundary[m_grainBoundary.size() - 1].energy =
+			m_grainBoundary[0].energy;
 	m_grainBoundary[m_grainBoundary.size() - 1].mob = m_grainBoundary[0].mob;
 }
 
@@ -255,8 +256,10 @@ void ExplicitGrainBoundary::buildBoundarySectors(
 						m_constantSectors[0].setLeftContourPoint(-1);
 						m_constantSectors[0].setRightContourPoint(-1);
 					} else {
-						for (unsigned int j = 0; j
-								< m_constantSectors[currentlyBuilt].getJunctions().size(); j++) {
+						for (unsigned int j = 0;
+								j
+										< m_constantSectors[currentlyBuilt].getJunctions().size();
+								j++) {
 							m_constantSectors[0].mergeWith(
 									m_constantSectors[currentlyBuilt].getJunctions()[j]);
 						}
@@ -290,11 +293,11 @@ void ExplicitGrainBoundary::buildBoundarySectors(
 	if (m_constantSectors.size() > 1
 			|| m_constantSectors[0].getLeftContourPoint()
 					!= m_constantSectors[0].getRightContourPoint()) {
-		for (unsigned int i = 0; i < m_constantSectors.size()
-				&& m_constantSectors.size() > 1; i++) {
+		for (unsigned int i = 0;
+				i < m_constantSectors.size() && m_constantSectors.size() > 1;
+				i++) {
 			ContourSector& secR = m_constantSectors[i];
-			ContourSector& secL =
-					m_constantSectors[(i + 1 + sec_len) % sec_len];
+			ContourSector& secL = m_constantSectors[(i + 1 + sec_len) % sec_len];
 
 			ContourSector new_right = secR.generateLeftInterpolatingContour(
 					m_grainBoundary, m_owningGrain->get_h());
@@ -302,11 +305,11 @@ void ExplicitGrainBoundary::buildBoundarySectors(
 					m_grainBoundary, m_owningGrain->get_h());
 			bool merged = false;
 
-			for (int j = new_right.getRightContourPoint(); j
-					!= PERIODIC(new_right.getLeftContourPoint() + 1); j
-					= PERIODIC(j + 1)) {
-				if (j == new_left.getLeftContourPoint() || j
-						== new_left.getRightContourPoint()) {
+			for (int j = new_right.getRightContourPoint();
+					j != PERIODIC(new_right.getLeftContourPoint() + 1); j =
+							PERIODIC(j + 1)) {
+				if (j == new_left.getLeftContourPoint()
+						|| j == new_left.getRightContourPoint()) {
 					merged = true;
 				}
 			}
@@ -344,7 +347,8 @@ double ExplicitGrainBoundary::getWeight(int i, int j,
 	int segment = projectToGrainBondary(SPoint(j, i, 0, 0), lambda);
 
 	for (unsigned int q = 0; q < m_constantSectors.size(); q++)
-		if (m_constantSectors[q].isSegmentWithinSector(m_grainBoundary, segment)) {
+		if (m_constantSectors[q].isSegmentWithinSector(m_grainBoundary,
+				segment)) {
 			return m_constantSectors[q].getWeight(m_owningGrain,
 					&m_grainBoundary, segment, lambda);
 		}
@@ -523,8 +527,9 @@ void ExplicitGrainBoundary::setPointsOnBoundary(ContourSector& sector) {
 	int l_segment = sector.getJunctions()[0]->contourSegment;
 	//dist += ((m_grainBoundary[PERIODIC(l_segment + 1)]	- m_grainBoundary[l_segment]) * (1	- sector.getJunctions()[0]->lambda)).len();
 	dist += ((m_grainBoundary[PERIODIC(l_segment + 1)]
-			- m_grainBoundary[l_segment]) * (1
-			- sector.getJunctions()[0]->lambda)).len() * m_owningGrain->get_h();
+			- m_grainBoundary[l_segment])
+			* (1 - sector.getJunctions()[0]->lambda)).len()
+			* m_owningGrain->get_h();
 	l_segment = PERIODIC(l_segment + 1);
 
 	while (dist < Settings::ConstantSectorRadius) {
@@ -537,8 +542,8 @@ void ExplicitGrainBoundary::setPointsOnBoundary(ContourSector& sector) {
 	//Construct right side
 	int r_segment = sector.getJunctions()[0]->contourSegment;
 	//dist += ((m_grainBoundary[PERIODIC(r_segment + 1)]	- m_grainBoundary[r_segment]) * (sector.getJunctions()[0]->lambda)).len();
-	dist
-			+= ((m_grainBoundary[PERIODIC(r_segment + 1)]
+	dist +=
+			((m_grainBoundary[PERIODIC(r_segment + 1)]
 					- m_grainBoundary[r_segment])
 					* (sector.getJunctions()[0]->lambda)).len()
 					* m_owningGrain->get_h();
@@ -606,18 +611,23 @@ double ExplicitGrainBoundary::get_f_StoredElasticEnergy(int neighbor) {
 					- m_directNeighbourhood[i].StoredElasticEnergy)
 					* m_directNeighbourhood[i].mobility;
 	}
+	return -1;
 }
 double ExplicitGrainBoundary::getMobility(int neighbor) {
 	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
 		if (m_directNeighbourhood[i].directNeighbour->getID() == neighbor)
 			return m_directNeighbourhood[i].mobility;
 	}
+	return -1;
 }
 double ExplicitGrainBoundary::get_f_magneticEnergy(int neighbor) {
 	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
 		if (m_directNeighbourhood[i].directNeighbour->getID() == neighbor)
-			return ((m_owningGrain->get_magneticEnergy() -m_directNeighbourhood[i].magneticEnergy) *m_directNeighbourhood[i].mobility);
+			return ((m_owningGrain->get_magneticEnergy()
+					- m_directNeighbourhood[i].magneticEnergy)
+					* m_directNeighbourhood[i].mobility);
 	}
+	return -1;
 }
 
 SPoint ExplicitGrainBoundary::calculateCentroid() {
@@ -656,8 +666,8 @@ SPoint ExplicitGrainBoundary::calculateCentroid() {
 double ExplicitGrainBoundary::getMeanM() const {
 	double avg_m = 0;
 	for (unsigned int i = 0; i < m_directNeighbourhood.size(); i++) {
-		avg_m
-				+= m_directNeighbourhood[i].directNeighbour->getDirectNeighbourCount();
+		avg_m +=
+				m_directNeighbourhood[i].directNeighbour->getDirectNeighbourCount();
 	}
 	avg_m /= m_directNeighbourhood.size();
 	return avg_m;
@@ -694,5 +704,16 @@ vector<double> ExplicitGrainBoundary::getGbSegmentLength() {
 		SegmentLengths.push_back(m_directNeighbourhood[i].length);
 	}
 	return SegmentLengths;
+}
+vector<Face>* ExplicitGrainBoundary::getFaces() {
+	vector<Face>* my_faces = new vector<Face>;
+	for (vector<characteristics>::iterator it = m_directNeighbourhood.begin();
+			it != m_directNeighbourhood.end(); it++) {
+		if (it->directNeighbour->getID() < m_owningGrain->getID())
+			my_faces->push_back(
+					Face(it->length, m_owningGrain->getID(),
+							it->directNeighbour->getID()));
+	}
+	return my_faces;
 }
 

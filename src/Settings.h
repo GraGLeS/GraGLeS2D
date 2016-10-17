@@ -115,6 +115,10 @@ public:
 	static double C_Value;
 	static double A_Value;
 
+	static double GaussianKernelUserDefTimeSlope;
+	static double BoxDefaultStoredElasticEnergy;
+	static unsigned long UserDefNumberOfPointsPerGrain;
+
 	static void initializeParameters(std::string filename = "");
 	static void readMagneticFieldParams(std::string filename);
 	static rapidxml::xml_node<>* generateXMLParametersNode(

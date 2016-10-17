@@ -33,6 +33,10 @@
 #include "rapidxml_print.hpp"
 #include "IterativeGrainScheduler.h"
 #include "SquaresGrainScheduler.h"
+#include <fstream>
+#include <string>
+#include <string.h>
+#include "Structs.h"
 #ifdef USE_MKL
 #include "mkl.h"
 #endif
@@ -86,19 +90,35 @@ void grainhdl::setSimulationParameter() {
 	case E_LAPLACE: {
 		dt = 0.8 / double(realDomainSize * realDomainSize)
 				* Settings::NumberOfPointsPerGrain / 2 / 5.0;
+		if(Settings::DecoupleGrains == 1) {
+					dt = 0.8 / double(realDomainSize * realDomainSize)
+					* Settings::UserDefNumberOfPointsPerGrain / 2 / 5.0; //MK factor 2 to translate diameter in radius, factor 5.0
+				}
 		TimeSlope = 0.8482;
+		TimeSlope = Settings::GaussianKernelUserDefTimeSlope;
 		break;
 	}
 	case E_LAPLACE_RITCHARDSON: {
 		dt = 0.8 / double(realDomainSize * realDomainSize)
 				* Settings::NumberOfPointsPerGrain / 2 / 5.0;
-		TimeSlope = 0.8482;
+		if(Settings::DecoupleGrains == 1) {
+					dt = 0.8 / double(realDomainSize * realDomainSize)
+					* Settings::UserDefNumberOfPointsPerGrain / 2 / 5.0; //MK factor 2 to translate diameter in radius, factor 5.0
+				}
+		TimeSlope = 0.8202;
+		TimeSlope = Settings::GaussianKernelUserDefTimeSlope;
 		break;
 	}
 	case E_GAUSSIAN: {
 		dt = 0.8 / double(realDomainSize * realDomainSize)
-				* Settings::NumberOfPointsPerGrain / 2 / 5.0;
-		TimeSlope = 0.8482;
+				* Settings::NumberOfPointsPerGrain / 2 / 5.0; //CM::one grid point per integration step defined such that grain with radius 5 migrates at most 1 px per integration step
+		if(Settings::DecoupleGrains == 1) {
+			dt = 0.8 / double(realDomainSize * realDomainSize)
+			* Settings::UserDefNumberOfPointsPerGrain / 2 / 5.0; //MK factor 2 to translate diameter in radius, factor 5.0
+		}
+		TimeSlope = 0.8359;
+		//##overwrite to user timeslope
+		TimeSlope = Settings::GaussianKernelUserDefTimeSlope;
 		break;
 	}
 	default:
@@ -155,6 +175,7 @@ void grainhdl::setSimulationParameter() {
 	case E_READ_VOXELIZED_MICROSTRUCTURE: {
 		cout << "Starting to read microstructure input files" << endl;
 		read_voxelized_microstructure();
+		cout << "Read microstructure input files successfully" << endl;
 		break;
 	}
 	case E_INVALID_VAL: {
@@ -212,9 +233,8 @@ void grainhdl::setSimulationParameter() {
 		break;
 	}
 	}
-	find_correctTimestepSize();
 	GrainJunction::handler = this;
-
+	find_correctTimestepSize();
 	// 	construct_boundary();
 	//program options:
 	cout << endl << "******* PROGRAM OPTIONS: *******" << endl << endl;
@@ -231,19 +251,26 @@ void grainhdl::find_correctTimestepSize() {
 	double my_max = 0;
 	double my_min = 1000000;
 	if (Settings::UseMagneticField) {
-		for (int i = 1; i < ngrains; i++ ) {
-			if (grains[i]->get_magneticEnergy() < my_min) my_min = grains[i]->get_magneticEnergy();
-			if (grains[i]->get_magneticEnergy() > my_max) my_max = grains[i]->get_magneticEnergy();
+		for (int i = 1; i < ngrains; i++) {
+			if (grains[i] != NULL) {
+				if (grains[i]->get_magneticEnergy() < my_min)
+					my_min = grains[i]->get_magneticEnergy();
+				if (grains[i]->get_magneticEnergy() > my_max)
+					my_max = grains[i]->get_magneticEnergy();
+			}
 		}
+
 		if (ngrains == 1)
 			my_min = 0.0;
 		m_Energy_deltaMAX = (my_max - my_min);
-		double m_dt_Correction = 0.5
-				/ (double) realDomainSize / m_Energy_deltaMAX / dt;
-		if (m_dt_Correction > 1.0)
-			m_dt_Correction = 1.0;
-		dt *= m_dt_Correction;
 	}
+	double vmax = (m_Energy_deltaMAX * dt);
+	double m_dt_Correction = 0.5/(vmax / h) ;
+	;
+	if (m_dt_Correction > 1.0)
+		m_dt_Correction = 1.0;
+	dt *= m_dt_Correction;
+
 }
 void grainhdl::read_HeaderCPG() {
 	FILE * compressedGrainInfo;
@@ -264,7 +291,7 @@ void grainhdl::read_HeaderCPG() {
 	int NX;
 	int NY;
 
-	for (int i = 1; i <= 8; i++) {
+	for (int i = 1; i < 8; i++) {
 		if (i == 1) {
 			do {
 				c = fgetc(compressedGrainInfo);
@@ -286,7 +313,7 @@ void grainhdl::read_HeaderCPG() {
 			//cout << buffer << "\t" << DY << endl;
 		}
 		if (i == 5) {
-			fscanf(compressedGrainInfo, "%s \t %i\n", buffer, &NX);
+			fscanf(compressedGrainInfo, "%s \t %i\n", buffer, &realDomainSize);
 			//cout << buffer << "\t" << NX << endl;
 		}
 		if (i == 6) {
@@ -301,8 +328,7 @@ void grainhdl::read_HeaderCPG() {
 	}
 	ngrains = Settings::NumberOfParticles;
 	currentNrGrains = ngrains;
-	realDomainSize = NX;
-	Settings::NumberOfPointsPerGrain = (int) (NX / sqrt(ngrains) + 0.5);
+	Settings::NumberOfPointsPerGrain = (int) (realDomainSize / sqrt(ngrains));
 	// half open container of VORO++
 	fclose(compressedGrainInfo);
 }
@@ -370,7 +396,10 @@ void grainhdl::read_voxelized_microstructure() {
 	vertices.resize(ngrains + 1);
 	Quaternion* Quaternionen = new Quaternion[ngrains + 1];
 	ID = new int[ngrains + 1];
-	StoredElasticEnergy = new double[ngrains + 1];
+	if (Settings::UseStoredElasticEnergy) {
+		StoredElasticEnergy = new double[ngrains + 1];
+	}
+	double bufferStored;
 	counts = new int[ngrains + 1];
 	x = new double[ngrains + 1];
 	y = new double[ngrains + 1];
@@ -378,17 +407,19 @@ void grainhdl::read_voxelized_microstructure() {
 	double StoredElasticEnergy_MIN = 1e20;
 	double StoredElasticEnergy_MAX = 0;
 	for (int nn = 1; nn <= ngrains; nn++) {
-		//ID, x, y, bunge1, bunge2, bunge3, xmin, xmax, ymin, ymax
+		//ID, x, y, bunge1, bunge2, bunge3, xmin, xmax, ymin, ymax, vol, stored energy
 		fscanf(
 				compressedGrainInfo,
 				"%d\t %lf\t %lf\t %lf\t %lf\t %lf\t %d\t %d\t %d\t %d\t %d\t %lf \n",
 				&id, &x[nn], &y[nn], &bunge[0], &bunge[1], &bunge[2], &xmin,
-				&xmax, &ymin, &ymax, &counts[nn], &StoredElasticEnergy[nn]);
-		if (abs(StoredElasticEnergy[nn]) < StoredElasticEnergy_MIN)
-			StoredElasticEnergy_MIN = abs(StoredElasticEnergy[nn]);
-		if (abs(StoredElasticEnergy[nn]) > StoredElasticEnergy_MAX)
-			StoredElasticEnergy_MAX = abs(StoredElasticEnergy[nn]);
-
+				&xmax, &ymin, &ymax, &counts[nn], &bufferStored);
+		if (Settings::UseStoredElasticEnergy) {
+			StoredElasticEnergy[nn] = bufferStored;
+			if (abs(StoredElasticEnergy[nn]) < StoredElasticEnergy_MIN)
+				StoredElasticEnergy_MIN = abs(StoredElasticEnergy[nn]);
+			if (abs(StoredElasticEnergy[nn]) > StoredElasticEnergy_MAX)
+				StoredElasticEnergy_MAX = abs(StoredElasticEnergy[nn]);
+		}
 		//printf("%d\t %lf\t %lf\t %lf\t %lf\t %lf\t %d\t %d\t %d\t %d\t %d \n",
 		//		id, x[nn], y[nn], bunge[0], bunge[1], bunge[2], xmin,
 		//		xmax, ymin, ymax, counts[nn]);
@@ -408,16 +439,25 @@ void grainhdl::read_voxelized_microstructure() {
 	fclose(compressedGrainInfo);
 	// find maximum Velocity driven exclusively by Stored Elastic Energy
 	// adapt timestep with
-	if (ngrains == 1)
-		StoredElasticEnergy_MIN = 0.0;
-	m_Energy_deltaMAX = Settings::DislocEnPerM * (StoredElasticEnergy_MAX
-			- StoredElasticEnergy_MIN) / Settings::HAGB_Energy
-			* Settings::Physical_Domain_Size;
-	double m_dt_StoredElasticEnergy_Correction = 0.5 / (double) realDomainSize
-			/ m_Energy_deltaMAX / dt;
-	if (m_dt_StoredElasticEnergy_Correction > 1.0)
-		m_dt_StoredElasticEnergy_Correction = 1.0;
-	dt *= m_dt_StoredElasticEnergy_Correction;
+	if (Settings::UseStoredElasticEnergy) {
+		if (abs(boundary->get_StoredElasticEnergy()) / Settings::DislocEnPerM
+				* Settings::HAGB_Energy / Settings::Physical_Domain_Size
+				< StoredElasticEnergy_MIN)
+			StoredElasticEnergy_MIN = abs(boundary->get_StoredElasticEnergy())
+					/ Settings::DislocEnPerM * Settings::HAGB_Energy
+					/ Settings::Physical_Domain_Size;
+		if (abs(boundary->get_StoredElasticEnergy()) / Settings::DislocEnPerM
+				* Settings::HAGB_Energy / Settings::Physical_Domain_Size
+				> StoredElasticEnergy_MAX)
+			StoredElasticEnergy_MAX = abs(boundary->get_StoredElasticEnergy())
+					/ Settings::DislocEnPerM * Settings::HAGB_Energy
+					/ Settings::Physical_Domain_Size;
+		if (ngrains == 1)
+			StoredElasticEnergy_MIN = 0.0;
+		m_Energy_deltaMAX = Settings::DislocEnPerM * (StoredElasticEnergy_MAX
+				- StoredElasticEnergy_MIN) / Settings::HAGB_Energy
+				* Settings::Physical_Domain_Size;
+	}
 	//BINARY read-in
 
 	FILE * voxelized_data;
@@ -429,7 +469,7 @@ void grainhdl::read_voxelized_microstructure() {
 	}
 
 	IDField = new DimensionalBuffer<int> (0, 0, ngridpoints, ngridpoints);
-	int min_ID = 100;
+	//	int min_ID = 100;
 
 	for (int j = 0; j < ngridpoints; j++) {
 		for (int i = 0; i < ngridpoints; i++) {
@@ -440,9 +480,11 @@ void grainhdl::read_voxelized_microstructure() {
 				int box_id;
 				fread(&box_id, sizeof(int), 1, voxelized_data);
 				box_id = box_id - (ID_offset - 1);
+				if (box_id < 0)
+					box_id = 0;
 				IDField->setValueAt(j, i, box_id);
-				if (box_id < min_ID)
-					min_ID = box_id;
+				//				if (box_id < min_ID)
+				//					min_ID = box_id;
 			}
 
 		}
@@ -463,7 +505,9 @@ void grainhdl::read_voxelized_microstructure() {
 	delete[] x;
 	delete[] y;
 	delete[] counts;
-	delete[] StoredElasticEnergy;
+	if (Settings::UseStoredElasticEnergy) {
+		delete[] StoredElasticEnergy;
+	}
 }
 
 void grainhdl::VOROMicrostructure() {
@@ -486,11 +530,8 @@ void grainhdl::VOROMicrostructure() {
 		realDomainSize -= 1;
 
 	voronoicell_neighbor c;
-	int blocks = (int)(pow((Settings::NumberOfParticles / 8), (1 / 3.)) + 1);
-	if (blocks < 1)
-		blocks = 1;
-	container con(0, 1, 0, 1, 0, 1, blocks, blocks, blocks, randbedingung, randbedingung,
-			randbedingung, 8);
+	container con(0, 1, 0, 1, 0, 1, 5, 5, 5, randbedingung, randbedingung,
+			randbedingung, 2);
 	c_loop_all vl(con);
 
 	//!
@@ -569,40 +610,46 @@ void grainhdl::readMicrostructure() {
 		exit(2);
 	}
 	int id;
-	double* q1, *q2, *q3, *q4;
 	double xl, yl;
 
-	int* nvertices = new int[ngrains + 1];
+	int nvertices;
 	//double* vertices = new double[1000];
 	vector < vector<SPoint> > vertices;
 	vertices.resize(ngrains + 1);
-	q1 = new double[ngrains + 1];
-	q2 = new double[ngrains + 1];
-	q3 = new double[ngrains + 1];
-	q4 = new double[ngrains + 1];
+	vector<double> q1, q2, q3, q4;
+	q1.resize(ngrains + 1);
+	q2.resize(ngrains + 1);
+	q3.resize(ngrains + 1);
+	q4.resize(ngrains + 1);
 
 	vertices.resize(ngrains + 1);
 
 	for (int nn = 1; nn <= ngrains; nn++) {
+		fscanf(levelset, "%d\t", &id);
+		q1[nn] = -1000;
+		if (id >= ngrains) {
+			grains.resize(id + 1);
+			q1.resize(id + 1);
+			q2.resize(id + 1);
+			q3.resize(id + 1);
+			q4.resize(id + 1);
+			Settings::NumberOfParticles = id;
+			ngrains = id;
+			currentNrGrains = id;
+		}
 
-		fscanf(levelset, "%d\t %d\t %lf\t %lf\t%lf\t%lf\n", &id,
-				&nvertices[nn], &q1[nn], &q2[nn], &q3[nn], &q4[nn]);
-
-		for (int j = 0; j < nvertices[nn]; j++) {
+		fscanf(levelset, "%d\t %lf\t %lf\t%lf\t%lf\n", &nvertices, &q1[nn],
+				&q2[nn], &q3[nn], &q4[nn]);
+		for (int j = 0; j < nvertices; j++) {
 			fscanf(levelset, "%lf\t %lf\n", &xl, &yl);
-			if (xl < 0 || yl < 0 || xl > 1 || yl > 1) {
-				if (xl < 0)
-					xl = 0;
-				if (yl < 0)
-					yl = 0;
-				if (xl > 1)
-					xl = 1;
-				if (yl > 1)
-					yl = 1;
-				//cout << "warning: corrupted input file for grain: " << id
-				//		<< " Clamping to [0;1]." << endl;
-			}
-
+			if (xl < 0)
+				xl = 0;
+			if (yl < 0)
+				yl = 0;
+			if (xl > 1)
+				xl = 1;
+			if (yl > 1)
+				yl = 1;
 			vertices[nn].push_back(SPoint(xl, yl, 0, 0));
 		}
 		fscanf(levelset, "\n");
@@ -611,14 +658,7 @@ void grainhdl::readMicrostructure() {
 	fclose(levelset);
 
 	buildBoxVectors(vertices, q1, q2, q3, q4);
-
-	delete[] q1;
-	delete[] q2;
-	delete[] q3;
-	delete[] q4;
-	delete[] nvertices;
 }
-
 void grainhdl::readMicrostructureFromVertex() {
 	FILE * levelset;
 	levelset = fopen(Settings::ReadFromFilename.c_str(), "r");
@@ -638,13 +678,13 @@ void grainhdl::readMicrostructureFromVertex() {
 		fscanf(levelset, "%ld\t %d\t %lf\t %lf\t%lf\n", &id, &nedges, &phi1,
 				&PHI, &phi2);
 		edges = new double[nedges * 4];
-		cout << id << " || " << nedges << " || " << phi1 << " || " << PHI
-				<< " || " << phi2 << endl;
+		//		cout << id << " || " << nedges << " || " << phi1 << " || " << PHI
+		//				<< " || " << phi2 << endl;
 
 		for (int j = 0; j < nedges; j++) {
 			fscanf(levelset, "%lf\t %lf\t %lf\t%lf\n", &xl, &yl, &xr, &yr);
-			cout << xl << " ||\t " << yl << " ||\t " << xr << " ||\t " << yr
-					<< " ||\t " << endl;
+			//			cout << xl << " ||\t " << yl << " ||\t " << xr << " ||\t " << yr
+			//					<< " ||\t " << endl;
 			int k = 4 * j;
 			edges[k] = xl;
 			edges[k + 1] = yl;
@@ -707,7 +747,7 @@ for	(auto id : workload) {
 		grains[id]->calculateDistanceFunction();
 	}
 }
-if(IDField != NULL)
+if (IDField != NULL)
 delete IDField;
 
 }
@@ -726,29 +766,29 @@ void grainhdl::convolution(double& plan_overhead) {
 	{
 		vector<unsigned int>& workload = m_grainScheduler->getThreadWorkload(
 				omp_get_thread_num());
-for	(auto id : workload)
-	{
-		if(id <= Settings::NumberOfParticles)
-		if(grains[id] != NULL)
-		grains[id]->executeConvolution(m_ThreadMemPool[omp_get_thread_num()]);
+for	(auto id : workload) {
+		if (id <= Settings::NumberOfParticles)
+		if (grains[id] != NULL)
+		grains[id]->executeConvolution(
+				m_ThreadMemPool[omp_get_thread_num()]);
 	}
 }
 gettimeofday(&t, NULL);
-timer = t.tv_sec + t.tv_usec/1000000;
+timer = t.tv_sec + t.tv_usec / 1000000;
 destroyConvolutionPlans();
 gettimeofday(&t, NULL);
-plan_overhead += t.tv_sec + t.tv_usec/1000000 - timer;
+plan_overhead += t.tv_sec + t.tv_usec / 1000000 - timer;
 }
 void grainhdl::createConvolutionPlans() {
 #pragma omp parallel
 	{
 		vector<unsigned int>& workload = m_grainScheduler->getThreadWorkload(
 				omp_get_thread_num());
-for	(auto id : workload)
-	{
-		if(id <= Settings::NumberOfParticles)
-		if(grains[id] != NULL)
-		grains[id]->preallocateMemory(m_ThreadMemPool[omp_get_thread_num()]);
+for	(auto id : workload) {
+		if (id <= Settings::NumberOfParticles)
+		if (grains[id] != NULL)
+		grains[id]->preallocateMemory(
+				m_ThreadMemPool[omp_get_thread_num()]);
 	}
 }
 #ifdef USE_FFTW
@@ -832,12 +872,8 @@ void grainhdl::save_Texture() {
 	ofstream myfile;
 	FILE* enLenDis;
 	stringstream filename;
-
 	double totalLength = 0;
 	double total_energy = 0.0;
-
-	filename << "Texture" << "_" << loop << ".ori";
-	myfile.open(filename.str());
 
 	filename.str("");
 	filename << "MODF_" << loop << ".txt";
@@ -854,78 +890,126 @@ void grainhdl::save_Texture() {
 
 	std::fill(MODF.begin(), MODF.end(), 0.0);
 
-	for (it = ++grains.begin(); it != grains.end(); it++) {
-		if (*it != NULL && (*it)->grainExists() == true
-				&& (*it)->isMotionRegular() == true) {
-			total_energy += (*it)->getEnergy();
-			euler = (*it)->getOrientationQuat()->quaternion2EulerConst();
+	if (Settings::NeighbourTracking && loop > 0) {
+		stringstream filename;
+		filename << "Texture" << "_" << loop << ".bin";
+		FILE* binaryTexture = fopen(filename.str().c_str(), "wb");
+		filename.str(std::string());
+		filename.clear();
+		filename << "Faces" << "_" << loop << ".bin";
+		FILE* binaryFaces = fopen(filename.str().c_str(), "wb");
 
-			totalLength += (*it)->getPerimeter() * 0.5;
-			map<int, double>& localMODF = (*it)->getlocalMODF();
-			int MODFsize = MODF.size();
-			for (const auto& iterator : localMODF) {
-				if (iterator.first < MODFsize) {
-					MODF[iterator.first] += iterator.second / 2;
+		for (int i = 1; i < grains.size(); i++) {
+			if (grains[i] != NULL && grains[i]->grainExists()) {
+				totalLength += grains[i]->getVolume() * 0.5;
+				total_energy += grains[i]->getEnergy() * 0.5;
+//								fwrite(&grains[i]->collectTextureData(), sizeof(TextureData), 1,
+//										binaryTexture);
+				vector<Face>* myfaces = grains[i]->get_Faces();
+				for (auto it : *myfaces) {
+					//fwrite(&(it), sizeof(Face), 1, binaryFaces);
 				}
+				delete myfaces;
 			}
-			//! If ResearchMode is activated additional data (e.g. the mean (euclidean) triple-junction-distance) is stored in the Texture files
-			if (Settings::ResearchMode) {
-				double mean_a = (*it)->getMeanA();
-				//! Determine the mean number "m" of the direct neighbors' number of faces
-
-				double mean_m = (*it)->getMeanM();
-
-				myfile << (*it)->getID() << '\t'
-						<< (*it)->getDirectNeighbourCount() << '\t'
-						<< (*it)->intersectsBoundaryGrain() << '\t'
-						<< (*it)->getVolume() << '\t' << (*it)->getMeanDa()
-						/ Settings::AnalysisTimestep << '\t'
-						<< (*it)->getPerimeter() << '\t' << (*it)->getEnergy()
-						<< '\t' << (*it)->get_StoredElasticEnergy() << '\t'
-						<< mean_a << '\t' << mean_m << '\t' << euler[0] << '\t'
-						<< euler[1] << '\t' << euler[2];
-
-			} else {
-				myfile << (*it)->getID() << '\t'
-						<< (*it)->getDirectNeighbourCount() << '\t'
-						<< (*it)->intersectsBoundaryGrain() << '\t'
-						<< (*it)->getVolume() << '\t' << (*it)->getMeanDa()
-						/ Settings::AnalysisTimestep << '\t'
-						<< (*it)->getPerimeter() << '\t' << (*it)->getEnergy()
-						<< (*it)->get_StoredElasticEnergy() << '\t' << euler[0]
-						<< '\t' << euler[1] << '\t' << euler[2];
-			}
-
-			if (Settings::NeighbourTracking) {
-				vector<int> ids = (*it)->getDirectNeighbourIDs();
-				vector<double> lengths = (*it)->getGBLengths();
-				if (ids.size() != lengths.size())
-					cout << "length differences in ID and Length array! "
-							<< endl;
-				for (int i = 0; i < (*it)->getDirectNeighbourCount(); i++) {
-					myfile << '\t' << ids[i] << '\t' << lengths[i] << '\t';
-				}
-			}
-
-			myfile << endl;
-			double sum = 0.0;
-			for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
-				sum += MODF[i];
-			}
-			for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
-				if (MODF[i] > 0)
-					MODF[i] = MODF[i] / sum;
-			}
-
 		}
+		fclose(binaryFaces);
+		fclose(binaryTexture);
+	} else {
+		filename.str("");
+		filename << "Texture" << "_" << loop << ".ori";
+		myfile.open(filename.str());
+		for (it = ++grains.begin(); it != grains.end(); it++) {
+			if (*it != NULL && (*it)->grainExists() == true
+					&& (*it)->isMotionRegular() == true) {
+				total_energy += (*it)->getEnergy();
+				euler = (*it)->getOrientationQuat()->quaternion2EulerConst();
+
+				totalLength += (*it)->getPerimeter() * 0.5;
+				map<int, double>& localMODF = (*it)->getlocalMODF();
+				int MODFsize = MODF.size();
+				for (const auto& iterator : localMODF) {
+					if (iterator.first < MODFsize) {
+						MODF[iterator.first] += iterator.second / 2;
+					}
+				}
+				//! If ResearchMode is activated additional data (e.g. the mean (euclidean) triple-junction-distance) is stored in the Texture files
+				if (Settings::ResearchMode) {
+					double mean_a = (*it)->getMeanA();
+					//! Determine the mean number "m" of the direct neighbors' number of faces
+
+					double mean_m = (*it)->getMeanM();
+
+					myfile << (*it)->getID() << '\t'
+							<< (*it)->getDirectNeighbourCount() << '\t'
+							<< (*it)->intersectsBoundaryGrain() << '\t'
+							<< (*it)->getVolume() << '\t' << (*it)->getMeanDa()
+							/ Settings::AnalysisTimestep << '\t'
+							<< (*it)->getPerimeter() << '\t'
+							<< (*it)->getEnergy() << '\t';
+					if (Settings::UseMagneticField == 1)
+						myfile << (*it)->get_magneticEnergy() << '\t';
+					else
+						myfile << (*it)->get_StoredElasticEnergy() << '\t';
+					myfile << mean_a << '\t' << mean_m << '\t' << euler[0]
+							<< '\t' << euler[1] << '\t' << euler[2];
+
+				} else {
+					myfile << (*it)->getID() << '\t'
+							<< (*it)->getDirectNeighbourCount() << '\t'
+							<< (*it)->intersectsBoundaryGrain() << '\t'
+							<< (*it)->getVolume() << '\t' << (*it)->getMeanDa()
+							/ Settings::AnalysisTimestep << '\t'
+							<< (*it)->getPerimeter() << '\t'
+							<< (*it)->getEnergy() << '\t';
+					if (Settings::UseMagneticField == 1)
+						myfile << (*it)->get_magneticEnergy() << '\t';
+					else
+						myfile << (*it)->get_StoredElasticEnergy() << '\t';
+					myfile << euler[0] << '\t' << euler[1] << '\t' << euler[2];
+				}
+				//				if (Settings::NeighbourTracking) {
+				//					vector<int> ids = (*it)->getDirectNeighbourIDs();
+				//					vector<double> lengths = (*it)->getGBLengths();
+				//					if (ids.size() != lengths.size())
+				//						cout << "length differences in ID and Length array! "
+				//								<< endl;
+				//					myfile << '\t'
+				//							<< (*it)->getMinX()
+				//									+ (((*it)->getMaxX() - (*it)->getMinX()) / 2)
+				//											* h;
+				//					myfile << '\t'
+				//							<< (*it)->getMinY()
+				//									+ (((*it)->getMaxY() - (*it)->getMinY()) / 2)
+				//											* h;
+				//					for (int i = 0; i < (*it)->getDirectNeighbourCount(); i++) {
+				//						myfile << '\t' << ids[i] << '\t' << lengths[i];
+				//					}
+				//				}
+
+				myfile << endl;
+
+				double sum = 0.0;
+				for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
+					sum += MODF[i];
+				}
+				for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
+					if (MODF[i] > 0)
+						MODF[i] = MODF[i] / sum;
+				}
+
+			}
+		}
+		delete[] euler;
+		myfile.close();
 	}
-	delete[] euler;
 	if (!Settings::IsIsotropicNetwork) {
+
 		for (unsigned int i = 0; i < Settings::DiscreteSamplingRate; i++) {
 			fprintf(enLenDis, "%lf\t%lf\n", (float) (dh * (i + 1)),
 					(float) MODF[i]);
-			printf("%lf\t%lf\n", (float) (dh * (i + 1)), (float) MODF[i]);
+			//printf("%lf\t%lf\n", (float) (dh * (i + 1)), (float) MODF[i]);
 		}
+
 	}
 	totalenergy.push_back(0.5 * total_energy);
 	nr_grains.push_back(currentNrGrains);
@@ -939,8 +1023,8 @@ void grainhdl::save_Texture() {
 			<< endl;
 	myfile.close();
 	fclose(enLenDis);
-
 }
+
 
 double parallelRest = 0;
 double convo_time = 0;
@@ -960,7 +1044,7 @@ void grainhdl::run_sim() {
 	cout << "Time for Distancefunction Initialization: " << time.tv_sec
 			+ time.tv_usec / 1000000.0 - timer << endl;
 
-	Realtime = 0;
+	Realtime = 0.0;
 	find_neighbors();
 	for (loop = Settings::StartTime; loop <= Settings::StartTime
 			+ Settings::NumberOfTimesteps; loop++) {
@@ -1018,6 +1102,9 @@ void grainhdl::run_sim() {
 				save_NetworkPlot();
 			save_Texture();
 			save_NrGrainsStats();
+			if (Settings::MicrostructureGenMode
+					== E_READ_VOXELIZED_MICROSTRUCTURE && loop == 0)
+				save_Full_Microstructure_for_Restart();
 			//! With activated ResearchMode the id to centroid assignment is plotted
 			if (Settings::ResearchMode && calcCentroid)
 				save_id();
@@ -1027,9 +1114,14 @@ void grainhdl::run_sim() {
 		}
 		Realtime += (dt * (Settings::Physical_Domain_Size
 				* Settings::Physical_Domain_Size) / (TimeSlope
-				* Settings::HAGB_Energy * Settings::HAGB_Mobility)); // correction ok?
+				* Settings::HAGB_Energy * Settings::HAGB_Mobility)); //##MK correction ok?
+
+//		cout << "I am incrementing the real-time realTime/dt/PhysDomSize/realDomainSize/TimeSlope/Energy/Mobility/GridCoarsement = "
+//				<< Realtime << ";" << dt << ";" << Settings::Physical_Domain_Size << ";" << realDomainSize << ";" << TimeSlope << ";" << Settings::HAGB_Energy << ";" << Settings::HAGB_Mobility << "--" << (int) Settings::GridCoarsement << endl;
 
 		get_biggestGrainVol();
+		if(Settings::DecoupleGrains && ngrains == 1 && totalenergy.back() >0.98*PI/2)
+			break;
 		if (currentNrGrains < Settings::BreakupNumber) {
 			cout << "Network has coarsed to less than 3% of the population. "
 					<< "Remaining Grains: " << currentNrGrains
@@ -1101,7 +1193,8 @@ void grainhdl::save_Full_Microstructure_for_Restart() {
 	for (it = ++grains.begin(); it != grains.end(); it++) {
 		if (*it == NULL || (*it)->grainExists() == false)
 			continue;
-		if (loop != 0)
+		if (loop != 0 || Settings::MicrostructureGenMode
+				== E_READ_VOXELIZED_MICROSTRUCTURE)
 			(*it)->plot_full_grain(loop, false, &output, true);
 		else
 			(*it)->plot_full_grain(loop, false, &output, false);
@@ -1132,13 +1225,14 @@ void grainhdl::createParamsForSim(const char* param_filename,
 void grainhdl::save_NrGrainsStats() {
 	// 	(*my_weights).plot_weightmap(ngridpoints, ID, ST, zeroBox);
 	ofstream myfile;
-	myfile.open("NrGrains&EnergyStatistics.txt");
-	for (unsigned int i = 0; i < nr_grains.size(); i++) {
-		myfile << time[i] << "\t";
-		myfile << nr_grains[i] << "\t";
-		myfile << totalenergy[i] << "\t";
-		myfile << realDomainSize << endl;
-	}
+	if (loop == 0)
+		myfile.open("NrGrains&EnergyStatistics.txt");
+	else
+		myfile.open("NrGrains&EnergyStatistics.txt", ios::app);
+	myfile << time.back() << "\t";
+	myfile << nr_grains.back() << "\t";
+	myfile << totalenergy.back() << "\t";
+	myfile << realDomainSize << endl;
 	myfile.close();
 
 	// 	if (SAVEIMAGE)utils::PNGtoGIF("test.mp4");
@@ -1326,22 +1420,34 @@ for		(auto id : workload) {
 
 	switch (Settings::ConvolutionMode) {
 		case E_LAPLACE: {
-			dt = 0.8 / double(realDomainSize * realDomainSize);
+			dt = 0.8 / double(realDomainSize * realDomainSize)
+				* Settings::NumberOfPointsPerGrain / 2 / 5.0;
 			break;
 		}
 		case E_LAPLACE_RITCHARDSON: {
-			dt = 0.8 / double(realDomainSize * realDomainSize);
+			dt = 0.8 / double(realDomainSize * realDomainSize)
+				* Settings::NumberOfPointsPerGrain / 2 / 5.0;
 			break;
 		}
 		case E_GAUSSIAN: {
-			dt = 0.75 / double(realDomainSize * realDomainSize);
+			//dt = 0.8 / double( realDomainSize * realDomainSize )
+			//dt = 0.8 / double(realDomainSize * realDomainSize)
+			//	* Settings::NumberOfPointsPerGrain / 2; //CM::one grid point per integration step defined such that grain with radius 5 migrates at most 1 px per integration step
+			dt = 0.8 / double(realDomainSize * realDomainSize)
+				* Settings::NumberOfPointsPerGrain / 2 / 5.0; //CM::one grid point per integration step defined such that grain with radius 5 migrates at most 1 px per integration step
+			if(Settings::DecoupleGrains == 1) {
+				dt = 0.8 / double(realDomainSize * realDomainSize)
+					* Settings::UserDefNumberOfPointsPerGrain / 2 / 5.0; //MK factor 2 to translate diameter in radius, factor 5.0
+			}
 			break;
 		}
+
 		default:
 		break;
 	}
-	double m_dt_Correction = 0.5/ realDomainSize / m_Energy_deltaMAX / dt;
-	if(m_dt_Correction >1.0) m_dt_Correction=1.0;
+	double m_dt_Correction = 0.5 / realDomainSize / m_Energy_deltaMAX / dt;
+	if (m_dt_Correction > 1.0)
+	m_dt_Correction = 1.0;
 	dt *= m_dt_Correction;
 	ngrains = currentNrGrains;
 #pragma omp parallel
@@ -1499,8 +1605,9 @@ for	(auto id : workload) {
 }
 }
 
-void grainhdl::buildBoxVectors(vector<vector<SPoint>>& contours, double* q1,
-		double* q2, double* q3, double* q4) {
+void grainhdl::buildBoxVectors(vector<vector<SPoint>>& contours,
+		vector<double>& q1, vector<double>& q2, vector<double>& q3,
+		vector<double>& q4) {
 	m_grainScheduler->buildGrainWorkloads(contours, ngridpoints);
 #pragma omp parallel
 	{
@@ -1508,6 +1615,11 @@ void grainhdl::buildBoxVectors(vector<vector<SPoint>>& contours, double* q1,
 				omp_get_thread_num());
 for	(auto id : workload) {
 		if (id <= Settings::NumberOfParticles) {
+			//catch the grains with default q1 = -1000
+			if (q1[id] == -1000) {
+				grains[id] = NULL;
+				continue;
+			}
 			LSbox* grain = new LSbox(id, contours[id], q1[id], q2[id],
 					q3[id], q4[id], this);
 			grains[id] = grain;
@@ -1519,17 +1631,25 @@ for	(auto id : workload) {
 void grainhdl::buildBoxVectors(int* ID, vector<vector<SPoint>>& contours,
 		Quaternion* Quaternionen, double* StoredElasticEnergy) {
 	m_grainScheduler->buildGrainWorkloads(contours, ngridpoints);
+	cout << "Construct LSbox objects" << endl;
 #pragma omp parallel
 	{
 		vector<unsigned int>& workload = m_grainScheduler->getThreadWorkload(
 				omp_get_thread_num());
 for	(auto id : workload) {
 		if (id <= Settings::NumberOfParticles) {
-			if(ID[id]==-1) {
+			if (ID[id] == -1) {
 				grains[id] = NULL;
 				continue;
 			}
-			LSbox* grain = new LSbox(ID[id], contours[id], Quaternionen[id], StoredElasticEnergy[id], this);
+			LSbox* grain;
+			if (Settings::UseStoredElasticEnergy) {
+				grain = new LSbox(ID[id], contours[id], Quaternionen[id],
+						StoredElasticEnergy[id], this);
+			} else {
+				grain = new LSbox(ID[id], contours[id], Quaternionen[id], 0,
+						this);
+			}
 			grains[id] = grain;
 		}
 	}

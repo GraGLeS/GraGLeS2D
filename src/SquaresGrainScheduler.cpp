@@ -1,16 +1,8 @@
 /*
- GraGLeS 2D A grain growth simulation utilizing level set approaches
- Copyright (C) 2015  Christian Miessen, Nikola Velinov
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SquaresGrainScheduler.cpp
+ *
+ *  Created on: Dec 15, 2015
+ *      Author: cm654063
  */
 
 #include "SquaresGrainScheduler.h"
@@ -43,12 +35,17 @@ void SquaresGrainScheduler::buildGrainWorkloads(
 		list.resize(4);
 		for (unsigned int i = 1; i < contours.size(); i++) {
 			int pos_x, pos_y;
+			//skip empty position in re-read array
+			if(contours[i].size() ==0)
+				continue;
 			SPoint center = find_center(contours[i], n_gridpoints);
 			//check for coordinate system
+//			std::cout << center.x << center.y << endl;
 			if (center.x > 2) { // coordinates are in gridpoint ids
 				pos_x = int(center.x / n_gridpoints + 0.5);
 				pos_y = int(center.y / n_gridpoints + 0.5);
 			} else { // coordinates are in between [0,1]
+				//clamp to domain vertices
 				pos_x = int(center.x + 0.5);
 				pos_y = int(center.y + 0.5);
 			}
