@@ -2,7 +2,7 @@
 <Parameters>
 
    <VacuumPermeability> 12.566e-7 </VacuumPermeability> 
-   <MagneticVector_x> 1.0 </MagneticVector_x>
+   <MagneticVector_x> 0.0 </MagneticVector_x>
    <MagneticVector_y> 0.848048096 </MagneticVector_y>
    <MagneticVector_z> 0.529919264 </MagneticVector_z>
    <deltaMagSys> 1.18e-5 </deltaMagSys>

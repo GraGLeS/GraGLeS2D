@@ -12,11 +12,11 @@
    <DomainBorderSize> 7 </DomainBorderSize>
    <MicrostructureGenMode>1</MicrostructureGenMode>
    <!-- USAGE:
-   		O		E_READ_FROM_FILE,
+   		O		E_READ_FROM_FILE, use ReadFromFilename
 			1		E_GENERATE_WITH_VORONOY,
 			2		E_READ_VERTEX, // The edges need to be ordered
 			3		E_GENERATE_TESTCASE,
-			4		E_READ_VOXELIZED_MICROSTRUCTURE
+			4		E_READ_VOXELIZED_MICROSTRUCTURE, use ReadFromFilename and AdditionalFilename
    -->
    <ReadFromFilename>SyntheticTricrystal.SimID.51.GridX.51.GridY.51.bin</ReadFromFilename>
    <AdditionalFilename>SyntheticTricrystal.SimID.51.GridX.51.GridY.51.uds</AdditionalFilename>
