@@ -90,7 +90,7 @@ r<?xml version="1.0" encoding="utf-8"?>
         0       E_ITERATIVE
         1       E_SQUARES
    -->
-   <DecoupleGrains>1</DecoupleGrains>
+   <DecoupleGrains>0</DecoupleGrains>
       	<!-- USAGE:
 	     			0	  DEFAULT
    		1   skips comparison and let grains shring isolated
