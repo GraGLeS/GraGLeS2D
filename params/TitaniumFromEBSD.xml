@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+r<?xml version="1.0" encoding="utf-8"?>
 <Parameters>
 	<StartTime> 0 </StartTime>
    <NumberOfParticles> 5828 </NumberOfParticles> 
@@ -18,7 +18,7 @@
 			3		E_GENERATE_TESTCASE,
 			4		E_READ_VOXELIZED_MICROSTRUCTURE
    -->
-   <ReadFromFilename>Ti_mod.txt</ReadFromFilename>
+   <ReadFromFilename>Recrystallized_Titanium.txt</ReadFromFilename>
    <AdditionalFilename>SyntheticStructure1.uds</AdditionalFilename>
    <LatticeType>0</LatticeType>
 	   <!-- USAGE:
