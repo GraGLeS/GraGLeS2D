@@ -743,7 +743,7 @@ void LSbox::convolutionGeneratorMKL(MKL_Complex16* fftTemp)
 	double k = 2.0 * PI / n;
 	double G;
 	double coski;
-	int j2;GAUSIAN ts 20 sqrt(2/PI)
+	int j2;
 	int i2;
 
 	switch (Settings::ConvolutionMode) {
@@ -781,7 +781,7 @@ void LSbox::convolutionGeneratorMKL(MKL_Complex16* fftTemp)
 				i2 = mymin(i,n-i);
 				for (int j = 0; j < n; j++) {
 					j2 = mymin(j,n-j);
-					G = exp(-(i2 * i2 + j2 * j2) * 4.0 * dt * nsq / n_nsq * PI * PI) / n_nsq;
+					G = exp(-sqrt(2/PI)*(i2 * i2 + j2 * j2) * 4.0 * dt * nsq / n_nsq * PI * PI) / n_nsq;
 					fftTemp[i + n2 * j].real = fftTemp[i + n2 * j].real * G;
 					fftTemp[i + n2 * j].imag = fftTemp[i + n2 * j].imag * G;
 				}
