@@ -79,7 +79,7 @@ normalized_V =zeros(length(vertices),2);
 normalized_V(:,1) = (vertices(:,1)-xymin(1))/(nn(1));
 normalized_V(:,2) = (vertices(:,2)-xymin(2))/(nn(2));
 
-% normiert die längere achse auf 1
+% normiert die lÃ¤ngere achse auf 1
 if(nn(1) > nn(2))
     nominator = nn(1)
 else
@@ -108,8 +108,8 @@ for i = 1 : numel(smGrains)
     end
     
     NumberFaces=length(data); 
-    %fprintf(file, '%d %d %6.6f %6.6f %6.6f %6.6f \n',i, NumberFaces, get(q(i), 'a'), get(q(i), 'b'), get(q(i), 'c'), get(q(i), 'd')); 
-    fprintf(file, '%d %d %6.6f %6.6f %6.6f  \n',i, NumberFaces, phi(i,1), phi(i,2), phi(i,3)); 
+    fprintf(file, '%d %d %6.6f %6.6f %6.6f %6.6f \n',i, NumberFaces, get(q(i), 'a'), get(q(i), 'b'), get(q(i), 'c'), get(q(i), 'd')); 
+    %fprintf(file, '%d %d %6.6f %6.6f %6.6f  \n',i, NumberFaces, phi(i,1), phi(i,2), phi(i,3)); 
     for j = 1 : NumberFaces
        fprintf(file,'%6.6f %6.6f \n',data(j,1), data(j,2));
     end
