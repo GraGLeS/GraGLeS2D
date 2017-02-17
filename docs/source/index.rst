@@ -56,6 +56,7 @@ Specifically about GraGLeS:
  | Acta Materialia, 2015, 99
  | doi:10.1016/j.actamat.2015.07.040
  
+ 
  | Christian Mießen, Nikola Velinov, Günter Gottstein, Luis A. Barrales-Mora
  | A highly efficient 3D level-set grain growth algorithm tailored for ccNUMA architecture
  | https://arxiv.org/abs/1701.06658
